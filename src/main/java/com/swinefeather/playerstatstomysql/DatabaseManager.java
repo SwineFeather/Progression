@@ -1,4 +1,4 @@
-package com.example.playerstatstomysql;
+package com.swinefeather.playerstatstomysql;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -208,9 +208,8 @@ public class DatabaseManager {
 
     private String sanitizeStatKey(String key) {
         String sanitized = key.replaceAll("[^a-zA-Z0-9_]", "_").toLowerCase();
-        if (plugin.getConfig().getBoolean("simplify-stat-names", true)) {
-            sanitized = sanitized.replace("minecraft_", "");
-        }
+        // Always remove "minecraft:" prefix for cleaner stat names
+        sanitized = sanitized.replace("minecraft_", "");
         if (sanitized.length() > 255) {
             sanitized = sanitized.substring(0, 255);
         }

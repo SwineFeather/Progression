@@ -1,4 +1,4 @@
-package com.example.playerstatstomysql;
+package com.swinefeather.playerstatstomysql;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,8 +100,87 @@ public class PlaceholderManager {
             } else {
                 plugin.getLogger().info(String.format("No valid placeholder values for %s", playerUUID));
             }
+
+            // Sync Towny data if enabled
+            if (plugin.getConfig().getBoolean("towny.enabled")) {
+                syncTownyData(playerUUID, player);
+            }
         } catch (ClassNotFoundException e) {
             plugin.getLogger().warning(String.format("PlaceholderAPI class not found, skipping placeholders for %s", playerUUID));
+        }
+    }
+
+    private void syncTownyData(UUID playerUUID, OfflinePlayer player) {
+        try {
+            // Try to get Towny API
+            Class<?> townyUniverseClass = Class.forName("com.palmergames.bukkit.towny.TownyUniverse");
+            Class<?> residentClass = Class.forName("com.palmergames.bukkit.towny.object.Resident");
+            Class<?> townClass = Class.forName("com.palmergames.bukkit.towny.object.Town");
+            Class<?> nationClass = Class.forName("com.palmergames.bukkit.towny.object.Nation");
+
+            Object townyUniverse = townyUniverseClass.getMethod("getInstance").invoke(null);
+            Object resident = townyUniverseClass.getMethod("getResident", String.class).invoke(townyUniverse, player.getName());
+
+            if (resident != null) {
+                Map<String, String> townyStats = new HashMap<>();
+                
+                // Get town information
+                Object town = residentClass.getMethod("getTownOrNull").invoke(resident);
+                if (town != null) {
+                    String townName = (String) townClass.getMethod("getName").invoke(town);
+                    townyStats.put("town", townName);
+                    
+                    // Check if player is mayor
+                    Object mayor = townClass.getMethod("getMayor").invoke(town);
+                    boolean isMayor = mayor != null && mayor.equals(resident);
+                    townyStats.put("is_mayor", String.valueOf(isMayor));
+                    
+                    // Get town balance
+                    try {
+                        double balance = (Double) townClass.getMethod("getAccount").invoke(town);
+                        townyStats.put("town_balance", String.valueOf(balance));
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("Could not get town balance: " + e.getMessage());
+                    }
+                    
+                    // Get nation information
+                    Object nation = townClass.getMethod("getNationOrNull").invoke(town);
+                    if (nation != null) {
+                        String nationName = (String) nationClass.getMethod("getName").invoke(nation);
+                        townyStats.put("nation", nationName);
+                        
+                        // Check if player is king
+                        Object king = nationClass.getMethod("getKing").invoke(nation);
+                        boolean isKing = king != null && king.equals(resident);
+                        townyStats.put("is_king", String.valueOf(isKing));
+                        
+                        // Get nation balance
+                        try {
+                            double nationBalance = (Double) nationClass.getMethod("getAccount").invoke(nation);
+                            townyStats.put("nation_balance", String.valueOf(nationBalance));
+                        } catch (Exception e) {
+                            plugin.getLogger().warning("Could not get nation balance: " + e.getMessage());
+                        }
+                    } else {
+                        townyStats.put("nation", "none");
+                        townyStats.put("is_king", "false");
+                    }
+                } else {
+                    townyStats.put("town", "none");
+                    townyStats.put("nation", "none");
+                    townyStats.put("is_mayor", "false");
+                    townyStats.put("is_king", "false");
+                }
+                
+                if (!townyStats.isEmpty()) {
+                    dbManager.saveTownyStats(playerUUID, townyStats);
+                    plugin.getLogger().info(String.format("Saved Towny data for %s: %s", playerUUID, townyStats));
+                }
+            } else {
+                plugin.getLogger().info(String.format("No Towny resident found for %s", playerUUID));
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning(String.format("Failed to sync Towny data for %s: %s", playerUUID, e.getMessage()));
         }
     }
 

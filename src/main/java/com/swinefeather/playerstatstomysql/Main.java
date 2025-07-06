@@ -1,4 +1,4 @@
-package com.example.playerstatstomysql;
+package com.swinefeather.playerstatstomysql;
 
 import java.util.UUID;
 
@@ -15,7 +15,6 @@ public class Main extends JavaPlugin implements Listener {
     private PlaceholderManager placeholderManager;
     private StatSyncTask statSyncTask;
     private boolean disabled = false;
-    private boolean initialSyncDone = false;
 
     @Override
     public void onEnable() {
@@ -40,7 +39,7 @@ public class Main extends JavaPlugin implements Listener {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (!disabled && initialSyncDone) {
+                if (!disabled) {
                     getLogger().info("Running scheduled sync for online players...");
                     statSyncTask.syncOnlinePlayers(null);
                 }
@@ -57,18 +56,18 @@ public class Main extends JavaPlugin implements Listener {
             }
         }.runTaskTimerAsynchronously(this, exportInterval, exportInterval);
 
-        getLogger().info("PlayerStatsToMySQL v2.0 enabled!");
+        getLogger().info("PlayerStatsToMySQL v1.0 enabled!");
     }
 
     @Override
     public void onDisable() {
         dbManager.close();
-        getLogger().info("PlayerStatsToMySQL v2.0 disabled!");
+        getLogger().info("PlayerStatsToMySQL v1.0 disabled!");
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        if (!disabled && initialSyncDone) {
+        if (!disabled) {
             UUID playerUUID = event.getPlayer().getUniqueId();
             getLogger().info(String.format("Syncing stats for player leaving: %s", playerUUID));
             statSyncTask.syncSinglePlayer(playerUUID, null);
@@ -91,7 +90,6 @@ public class Main extends JavaPlugin implements Listener {
                 }
                 sender.sendMessage("§aStarting full stat sync...");
                 statSyncTask.syncAllPlayers(sender);
-                initialSyncDone = true;
                 return true;
             }
 

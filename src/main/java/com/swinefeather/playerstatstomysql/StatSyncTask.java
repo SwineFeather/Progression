@@ -1,4 +1,4 @@
-package com.example.playerstatstomysql;
+package com.swinefeather.playerstatstomysql;
 
 import java.io.File;
 import java.io.FileReader;
@@ -21,20 +21,12 @@ public class StatSyncTask {
     private final JavaPlugin plugin;
     private final DatabaseManager dbManager;
     private final PlaceholderManager placeholderManager;
-    private final Map<String, String> statDisplayNames;
     private final long minimumPlaytimeTicks;
 
     public StatSyncTask(JavaPlugin plugin, DatabaseManager dbManager, PlaceholderManager placeholderManager) {
         this.plugin = plugin;
         this.dbManager = dbManager;
         this.placeholderManager = placeholderManager;
-        this.statDisplayNames = new HashMap<>();
-        if (plugin.getConfig().getConfigurationSection("stat-display-names") != null) {
-            Map<String, Object> rawMap = plugin.getConfig().getConfigurationSection("stat-display-names").getValues(false);
-            for (Map.Entry<String, Object> entry : rawMap.entrySet()) {
-                statDisplayNames.put(entry.getKey(), String.valueOf(entry.getValue()));
-            }
-        }
         this.minimumPlaytimeTicks = plugin.getConfig().getLong("minimum-playtime-ticks", 0L);
     }
 
@@ -241,8 +233,7 @@ public class StatSyncTask {
                         String statKey = rs.getString("stat_key");
                         long value = rs.getLong("stat_value");
                         if (value > 0) {
-                            String displayName = statDisplayNames.getOrDefault(statKey, statKey);
-                            sender.sendMessage(String.format("§7%s: §e%d", displayName, value));
+                            sender.sendMessage(String.format("§7%s: §e%d", statKey, value));
                             hasStats = true;
                         }
                     }

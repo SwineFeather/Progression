@@ -9,10 +9,7 @@ sync-on-join: true
 placeholderapi:
   enabled: true
   placeholders: # Enter placeholders without % (e.g., vault_balance, not %vault_balance%)
-    - vault_balance
-    - player_kills
-    - essentials_lastlogin
-    - essentials_firstlogin
+    - vault_eco_balance
   blacklist: # Enter placeholders to exclude without % (e.g., townyadvanced_townboard)
     - townyadvanced_townboard
     - townyadvanced_nationboard
@@ -26,15 +23,5 @@ export:
     warning: "DO NOT ENABLE UNLESS YOU WANT TO DELETE OLD DATA! MAKE BACKUPS!"
     active_days: 30
     keep_files_days: 90
-simplify-stat-names: true
-stat-display-names:
-  sprint_one_cm: "Sprint Distance"
-  stone: "Stone Mined"
-  dirt: "Dirt Mined"
-  zombie: "Zombies Killed"
-  mutton: "Mutton Used"
-  vault_balance: "Balance"
-  essentials_lastlogin: "Last Login"
-  essentials_firstlogin: "First Joined"
 logging:
   level: verbose

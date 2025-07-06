@@ -1,4 +1,4 @@
-package com.example.playerstatstomysql;
+package com.swinefeather.playerstatstomysql;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,18 +22,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class ExportTask {
     private final JavaPlugin plugin;
     private final DatabaseManager dbManager;
-    private final Map<String, String> statDisplayNames;
 
     public ExportTask(JavaPlugin plugin, DatabaseManager dbManager) {
         this.plugin = plugin;
         this.dbManager = dbManager;
-        this.statDisplayNames = new HashMap<>();
-        if (plugin.getConfig().getConfigurationSection("stat-display-names") != null) {
-            Map<String, Object> rawMap = plugin.getConfig().getConfigurationSection("stat-display-names").getValues(false);
-            for (Map.Entry<String, Object> entry : rawMap.entrySet()) {
-                statDisplayNames.put(entry.getKey(), String.valueOf(entry.getValue()));
-            }
-        }
     }
 
     public void exportStats(CommandSender sender, String format) {
@@ -45,7 +37,9 @@ public class ExportTask {
         }
 
         if (!format.equalsIgnoreCase("json")) {
-            sender.sendMessage("§cOnly JSON format supported!");
+            if (sender != null) {
+                sender.sendMessage("§cOnly JSON format supported!");
+            }
             return;
         }
 
@@ -89,9 +83,8 @@ public class ExportTask {
                                                 String statKey = stats.getString("stat_key");
                                                 long value = stats.getLong("stat_value");
                                                 if (value > 0) {
-                                                    String displayName = statDisplayNames.getOrDefault(statKey, statKey);
                                                     if (!firstStat) writer.write(", ");
-                                                    writer.write("\"" + displayName + "\": " + value);
+                                                    writer.write("\"" + statKey + "\": " + value);
                                                     firstStat = false;
                                                 }
                                             } while (stats.next());
@@ -112,8 +105,7 @@ public class ExportTask {
                                     do {
                                         if (!firstPlaceholder) writer.write(", ");
                                         String key = placeholders.getString("placeholder_key");
-                                        String displayName = statDisplayNames.getOrDefault(key, key);
-                                        writer.write("{\"key\": \"" + displayName +
+                                        writer.write("{\"key\": \"" + key +
                                                 "\", \"value\": \"" + placeholders.getString("value") + "\"}");
                                         firstPlaceholder = false;
                                     } while (placeholders.next());
@@ -144,17 +136,23 @@ public class ExportTask {
                     zos.closeEntry();
                 }
                 jsonFile.delete();
-                sender.sendMessage(String.format("§aExported stats to %s", zipFile.getName()));
+                if (sender != null) {
+                    sender.sendMessage(String.format("§aExported stats to %s", zipFile.getName()));
+                }
             } else {
-                sender.sendMessage(String.format("§aExported stats to %s", fileName));
+                if (sender != null) {
+                    sender.sendMessage(String.format("§aExported stats to %s", fileName));
+                }
             }
 
             if (plugin.getConfig().getString("logging.level", "minimal").equalsIgnoreCase("debug")) {
                 plugin.getLogger().info(String.format("Export completed: %s", fileName));
             }
         } catch (SQLException | IOException e) {
-            sender.sendMessage(String.format("§cExport failed: %s", e.getMessage()));
-            plugin.getServer().getPluginManager().disablePlugin(plugin);
+            if (sender != null) {
+                sender.sendMessage(String.format("§cExport failed: %s", e.getMessage()));
+            }
+            plugin.getLogger().severe(String.format("Export failed: %s", e.getMessage()));
         }
     }
 
@@ -192,10 +190,14 @@ public class ExportTask {
                 }
             }
 
-            sender.sendMessage("§aCleanup completed!");
+            if (sender != null) {
+                sender.sendMessage("§aCleanup completed!");
+            }
         } catch (SQLException e) {
-            sender.sendMessage(String.format("§cCleanup failed: %s", e.getMessage()));
-            plugin.getServer().getPluginManager().disablePlugin(plugin);
+            if (sender != null) {
+                sender.sendMessage(String.format("§cCleanup failed: %s", e.getMessage()));
+            }
+            plugin.getLogger().severe(String.format("Cleanup failed: %s", e.getMessage()));
         }
     }
 }
