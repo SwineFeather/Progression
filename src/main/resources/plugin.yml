@@ -1,0 +1,43 @@
+name: PlayerStatsToMySQL
+version: 2.0
+main: com.example.playerstatstomysql.Main
+api-version: 1.13
+softdepend: [PlaceholderAPI, Towny]
+commands:
+  sqlstats:
+    description: Manages player stats syncing
+    usage: /<command> <sync|export|view|reload|placeholder|status|versioncheck|cleanup|stop|start|help>
+permissions:
+  playerstatstomysql.sqlstats.sync:
+    description: Allows syncing stats
+    default: op
+  playerstatstomysql.sqlstats.export:
+    description: Allows exporting stats
+    default: op
+  playerstatstomysql.sqlstats.view:
+    description: Allows viewing stats
+    default: op
+  playerstatstomysql.sqlstats.reload:
+    description: Allows reloading config
+    default: op
+  playerstatstomysql.sqlstats.placeholder:
+    description: Allows managing placeholders
+    default: op
+  playerstatstomysql.sqlstats.status:
+    description: Allows checking plugin status
+    default: op
+  playerstatstomysql.sqlstats.versioncheck:
+    description: Allows checking version compatibility
+    default: op
+  playerstatstomysql.sqlstats.cleanup:
+    description: Allows running cleanup
+    default: op
+  playerstatstomysql.sqlstats.stop:
+    description: Allows stopping the plugin
+    default: op
+  playerstatstomysql.sqlstats.start:
+    description: Allows starting the plugin
+    default: op
+  playerstatstomysql.sqlstats.help:
+    description: Allows viewing command help
+    default: op

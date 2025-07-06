@@ -1,0 +1,7 @@
+com\example\playerstatstomysql\Main.class
+com\example\playerstatstomysql\Main$2.class
+com\example\playerstatstomysql\ExportTask.class
+com\example\playerstatstomysql\PlaceholderManager.class
+com\example\playerstatstomysql\StatSyncTask.class
+com\example\playerstatstomysql\DatabaseManager.class
+com\example\playerstatstomysql\Main$1.class
