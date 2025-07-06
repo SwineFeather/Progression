@@ -1,11 +1,21 @@
+# PlayerStatsToMySQL Configuration
+# Edit this file to configure your MySQL database connection and plugin settings
+
 mysql:
+  # Enable/disable MySQL connection
   enabled: true
-  url: "jdbc:mysql://sql.bloom.host:3306/yourdatabaselink"
-  user: "u68391_your_username"
+  
+  # MySQL connection settings - UPDATE THESE WITH YOUR ACTUAL DATABASE INFO
+  url: "jdbc:mysql://localhost:3306/playerstats"
+  user: "your_username"
   password: "your_password"
-sync-interval-ticks: 1728000 # 24 hours in ticks 
-minimum-playtime-ticks: 72000 # 1 hour
+
+# Sync settings
+sync-interval-ticks: 1728000 # 24 hours in ticks (20 ticks = 1 second)
+minimum-playtime-ticks: 72000 # 1 hour minimum playtime required for sync
 sync-on-join: true
+
+# PlaceholderAPI integration
 placeholderapi:
   enabled: true
   placeholders: # Enter placeholders without % (e.g., vault_balance, not %vault_balance%)
@@ -13,15 +23,21 @@ placeholderapi:
   blacklist: # Enter placeholders to exclude without % (e.g., townyadvanced_townboard)
     - townyadvanced_townboard
     - townyadvanced_nationboard
+
+# Towny integration
 towny:
   enabled: true
+
+# Export settings
 export:
-  interval-ticks: 72000
-  compression: true
+  interval-ticks: 72000 # How often to export data (1 hour)
+  compression: true # Compress exported files
   cleanup:
-    enabled: false
+    enabled: false # WARNING: This will delete old data!
     warning: "DO NOT ENABLE UNLESS YOU WANT TO DELETE OLD DATA! MAKE BACKUPS!"
-    active_days: 30
-    keep_files_days: 90
+    active_days: 30 # Keep data for 30 days
+    keep_files_days: 90 # Keep export files for 90 days
+
+# Logging level (minimal/verbose/debug)
 logging:
   level: verbose

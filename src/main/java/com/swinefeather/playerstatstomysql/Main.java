@@ -18,16 +18,71 @@ public class Main extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
+        // Save default config first
         saveDefaultConfig();
-        dbManager = new DatabaseManager(this);
-        if (!dbManager.isConnected()) {
-            getLogger().severe("Database connection failed. Disabling plugin.");
-            getServer().getPluginManager().disablePlugin(this);
-            getLogger().info("Plugin disabled due to database connection failure.");
+        
+        getLogger().info("PlayerStatsToMySQL v1.0 starting up...");
+        
+        // Check if MySQL is enabled
+        if (!getConfig().getBoolean("mysql.enabled", true)) {
+            getLogger().warning("MySQL is disabled in config. Plugin will not function properly.");
+            getLogger().warning("Set 'mysql.enabled: true' in config.yml to enable the plugin.");
             return;
         }
-        dbManager.setupDatabase();
+        
+        // Validate config
+        String dbUrl = getConfig().getString("mysql.url");
+        String dbUser = getConfig().getString("mysql.user");
+        String dbPassword = getConfig().getString("mysql.password");
+        
+        if (dbUrl == null || dbUrl.isEmpty() || dbUrl.contains("yourdatabaselink")) {
+            getLogger().severe("Database URL not configured properly!");
+            getLogger().severe("Please edit plugins/PlayerStatsToMySQL/config.yml and update the MySQL settings:");
+            getLogger().severe("mysql:");
+            getLogger().severe("  url: \"jdbc:mysql://your-server:3306/your-database\"");
+            getLogger().severe("  user: \"your-username\"");
+            getLogger().severe("  password: \"your-password\"");
+            return;
+        }
+        
+        if (dbUser == null || dbUser.isEmpty() || dbUser.contains("your_username")) {
+            getLogger().severe("Database username not configured!");
+            getLogger().severe("Please update the 'mysql.user' setting in config.yml");
+            return;
+        }
+        
+        if (dbPassword == null || dbPassword.isEmpty() || dbPassword.contains("your_password")) {
+            getLogger().severe("Database password not configured!");
+            getLogger().severe("Please update the 'mysql.password' setting in config.yml");
+            return;
+        }
+        
+        getLogger().info("Attempting to connect to database...");
+        
+        // Initialize database manager
+        dbManager = new DatabaseManager(this);
+        if (!dbManager.isConnected()) {
+            getLogger().severe("Database connection failed!");
+            getLogger().severe("Please check your MySQL settings in config.yml:");
+            getLogger().severe("- Ensure MySQL server is running");
+            getLogger().severe("- Verify database URL, username, and password");
+            getLogger().severe("- Check if database exists and user has proper permissions");
+            getLogger().severe("Plugin will be disabled until database connection is established.");
+            return;
+        }
+        
+        getLogger().info("Database connection successful!");
+        
+        // Setup database tables
+        try {
+            dbManager.setupDatabase();
+            getLogger().info("Database tables created/verified successfully!");
+        } catch (Exception e) {
+            getLogger().severe("Failed to setup database tables: " + e.getMessage());
+            return;
+        }
 
+        // Initialize other components
         placeholderManager = new PlaceholderManager(this, dbManager);
         placeholderManager.loadPlaceholders();
 
@@ -35,6 +90,7 @@ public class Main extends JavaPlugin implements Listener {
 
         getServer().getPluginManager().registerEvents(this, this);
 
+        // Start scheduled tasks
         long syncInterval = getConfig().getLong("sync-interval-ticks", 12000L);
         new BukkitRunnable() {
             @Override
@@ -56,7 +112,8 @@ public class Main extends JavaPlugin implements Listener {
             }
         }.runTaskTimerAsynchronously(this, exportInterval, exportInterval);
 
-        getLogger().info("PlayerStatsToMySQL v1.0 enabled!");
+        getLogger().info("PlayerStatsToMySQL v1.0 enabled successfully!");
+        getLogger().info("Use /sqlstats help for available commands.");
     }
 
     @Override
