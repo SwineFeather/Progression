@@ -145,6 +145,10 @@ public class Main extends JavaPlugin implements Listener {
                     sender.sendMessage("§cPlugin is disabled. Use /sqlstats start to enable.");
                     return true;
                 }
+                if (statSyncTask == null) {
+                    sender.sendMessage("§cStatSyncTask not available. Plugin may not be fully initialized.");
+                    return true;
+                }
                 sender.sendMessage("§aStarting full stat sync...");
                 statSyncTask.syncAllPlayers(sender);
                 return true;
@@ -153,6 +157,10 @@ public class Main extends JavaPlugin implements Listener {
             if (subCommand.equals("export") && sender.hasPermission("playerstatstomysql.sqlstats.export")) {
                 if (disabled) {
                     sender.sendMessage("§cPlugin is disabled. Use /sqlstats start to enable.");
+                    return true;
+                }
+                if (dbManager == null) {
+                    sender.sendMessage("§cDatabaseManager not available. Plugin may not be fully initialized.");
                     return true;
                 }
                 String format = args.length > 1 ? args[1] : "json";
@@ -165,6 +173,10 @@ public class Main extends JavaPlugin implements Listener {
                     sender.sendMessage("§cPlugin is disabled. Use /sqlstats start to enable.");
                     return true;
                 }
+                if (statSyncTask == null) {
+                    sender.sendMessage("§cStatSyncTask not available. Plugin may not be fully initialized.");
+                    return true;
+                }
                 if (args.length < 3) {
                     sender.sendMessage("§cUsage: /sqlstats view <player> <category>");
                     return true;
@@ -174,13 +186,26 @@ public class Main extends JavaPlugin implements Listener {
             }
 
             if (subCommand.equals("reload") && sender.hasPermission("playerstatstomysql.sqlstats.reload")) {
-                reloadConfig();
-                placeholderManager.loadPlaceholders();
-                sender.sendMessage("§aConfig reloaded!");
+                try {
+                    reloadConfig();
+                    if (placeholderManager != null) {
+                        placeholderManager.loadPlaceholders();
+                        sender.sendMessage("§aConfig reloaded!");
+                    } else {
+                        sender.sendMessage("§cCannot reload: Plugin not fully initialized. Check console for errors.");
+                    }
+                } catch (Exception e) {
+                    sender.sendMessage("§cReload failed: " + e.getMessage());
+                    getLogger().severe("Reload failed: " + e.getMessage());
+                }
                 return true;
             }
 
             if (subCommand.equals("placeholder") && sender.hasPermission("playerstatstomysql.sqlstats.placeholder")) {
+                if (placeholderManager == null) {
+                    sender.sendMessage("§cPlaceholderManager not available. Plugin may not be fully initialized.");
+                    return true;
+                }
                 if (args.length < 2) {
                     sender.sendMessage("§cUsage: /sqlstats placeholder <list|add|blacklist> [placeholder]");
                     return true;
@@ -201,7 +226,9 @@ public class Main extends JavaPlugin implements Listener {
             if (subCommand.equals("status") && sender.hasPermission("playerstatstomysql.sqlstats.status")) {
                 sender.sendMessage("§aStatus:");
                 sender.sendMessage("§7Plugin: " + (disabled ? "§cDisabled" : "§aEnabled"));
-                sender.sendMessage("§7MySQL: " + (dbManager.isConnected() ? "§aConnected" : "§cDisconnected"));
+                sender.sendMessage("§7MySQL: " + (dbManager != null && dbManager.isConnected() ? "§aConnected" : "§cDisconnected"));
+                sender.sendMessage("§7PlaceholderManager: " + (placeholderManager != null ? "§aInitialized" : "§cNot Initialized"));
+                sender.sendMessage("§7StatSyncTask: " + (statSyncTask != null ? "§aInitialized" : "§cNot Initialized"));
                 sender.sendMessage("§7PlaceholderAPI: " + (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null ? "§aActive" : "§cInactive"));
                 sender.sendMessage("§7Towny: " + (getServer().getPluginManager().getPlugin("Towny") != null ? "§aActive" : "§cInactive"));
                 return true;
@@ -219,6 +246,10 @@ public class Main extends JavaPlugin implements Listener {
             if (subCommand.equals("cleanup") && sender.hasPermission("playerstatstomysql.sqlstats.cleanup")) {
                 if (disabled) {
                     sender.sendMessage("§cPlugin is disabled. Use /sqlstats start to enable.");
+                    return true;
+                }
+                if (dbManager == null) {
+                    sender.sendMessage("§cDatabaseManager not available. Plugin may not be fully initialized.");
                     return true;
                 }
                 if (!getConfig().getBoolean("export.cleanup.enabled")) {
@@ -242,7 +273,7 @@ public class Main extends JavaPlugin implements Listener {
             if (subCommand.equals("start") && sender.hasPermission("playerstatstomysql.sqlstats.start")) {
                 if (!disabled) {
                     sender.sendMessage("§cPlugin is already enabled!");
-                } else if (!dbManager.isConnected()) {
+                } else if (dbManager == null || !dbManager.isConnected()) {
                     sender.sendMessage("§cCannot start: Database connection failed!");
                 } else {
                     disabled = false;

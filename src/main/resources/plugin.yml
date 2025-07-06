@@ -1,8 +1,11 @@
 name: PlayerStatsToMySQL
-version: 2.0
-main: com.example.playerstatstomysql.Main
+version: 1.0
+main: com.swinefeather.playerstatstomysql.Main
 api-version: 1.13
 softdepend: [PlaceholderAPI, Towny]
+authors: [SwineFeather]
+description: Syncs player stats to a MySQL database
+
 commands:
   sqlstats:
     description: Manages player stats syncing
