@@ -1,274 +1,311 @@
-# PlayerStatsToMySQL
+# PlayerStatsToMySQL v1.0
 
-A powerful Minecraft plugin that synchronizes player statistics to a MySQL database, providing comprehensive data tracking and export capabilities.
+A Minecraft plugin that syncs player statistics to MySQL and/or Supabase databases. Perfect for creating websites, leaderboards, and analytics dashboards.
 
-## 🚀 Features
+## Features
 
-- **Automatic Stat Sync**: Automatically syncs player statistics to MySQL database
-- **Real-time Updates**: Syncs stats when players leave the server
-- **PlaceholderAPI Integration**: Tracks custom placeholders and plugin data
-- **Towny Integration**: Syncs Towny data including town membership, nation info, and balances
-- **Data Export**: Export player data to JSON format with compression support
-- **Clean Stat Names**: Removes "minecraft:" prefix for cleaner database storage
-- **Configurable Sync Intervals**: Customizable sync timing and playtime requirements
-- **Comprehensive Logging**: Detailed logging for debugging and monitoring
+### 🎯 Core Features
+- **Dual Database Support**: Sync to MySQL, Supabase, or both simultaneously
+- **Real-time Sync**: Automatic stat synchronization on player join/quit
+- **Batch Processing**: Efficient bulk operations with rate limiting
+- **PlaceholderAPI Integration**: Sync custom placeholders (Vault, Towny, etc.)
+- **Towny Integration**: Automatic town/nation data syncing
+- **Export System**: Export stats to JSON files
+- **Clean Stat Names**: Removes "minecraft:" prefixes for cleaner data
 
-## 📋 Requirements
+### 🚀 Supabase Features (New!)
+- **JSONB Storage**: Flexible stat storage using PostgreSQL JSONB
+- **REST API**: Uses Supabase REST API for efficient data transfer
+- **Rate Limiting**: Built-in rate limiting to respect Supabase limits
+- **Batch Processing**: Processes players one at a time with configurable delays
+- **UPSERT Operations**: Efficient insert/update operations
+- **Real-time Webhooks**: Ready for future real-time features
 
-- **Minecraft Server**: 1.16.5 - 1.21.1 (Paper/Spigot recommended)
-- **Java**: 17 or higher
-- **MySQL Database**: 5.7 or higher
-- **Plugins** (optional but recommended):
-  - PlaceholderAPI
-  - Towny (for town/nation data)
+## Quick Start
 
-## 📦 Installation
+### 1. Download & Install
+1. Download the latest JAR from releases
+2. Place it in your `plugins/` folder
+3. Start your server to generate config files
+4. Stop the server and configure your database
 
-1. **Download the Plugin**
-   - Download `PlayerStatsToMySQL-1.0.jar` from the releases
-   - Place it in your server's `plugins` folder
+### 2. Choose Your Database
 
-2. **Database Setup**
-   - Create a MySQL database for the plugin
-   - Note down the database URL, username, and password
-
-3. **Configure the Plugin**
-   - Start your server once to generate the config file
-   - Edit `plugins/PlayerStatsToMySQL/config.yml`
-   - Update the MySQL connection details
-
-4. **Restart the Server**
-   - Restart your server to load the plugin
-   - Check the console for any connection errors
-
-## ⚙️ Configuration
-
-### Basic Configuration
-
+#### Option A: MySQL Only
 ```yaml
+database:
+  type: "mysql"
+
+mysql:
+  enabled: true
+  url: "jdbc:mysql://localhost:3306/playerstats"
+  user: "your_username"
+  password: "your_password"
+```
+
+#### Option B: Supabase Only
+```yaml
+database:
+  type: "supabase"
+
+supabase:
+  enabled: true
+  url: "https://your-project.supabase.co"
+  key: "your-anon-key"
+```
+
+#### Option C: Both Databases
+```yaml
+database:
+  type: "both"
+
 mysql:
   enabled: true
   url: "jdbc:mysql://localhost:3306/playerstats"
   user: "your_username"
   password: "your_password"
 
-# Sync settings
-sync-interval-ticks: 1728000  # 24 hours in ticks
-minimum-playtime-ticks: 72000 # 1 hour minimum playtime
-sync-on-join: true
-
-# PlaceholderAPI integration
-placeholderapi:
+supabase:
   enabled: true
-  placeholders:
-    - vault_eco_balance
-  blacklist:
-    - townyadvanced_townboard
-    - townyadvanced_nationboard
-
-# Towny integration
-towny:
-  enabled: true
-
-# Export settings
-export:
-  interval-ticks: 72000
-  compression: true
-  cleanup:
-    enabled: false
-    active_days: 30
-    keep_files_days: 90
-
-# Logging
-logging:
-  level: verbose
+  url: "https://your-project.supabase.co"
+  key: "your-anon-key"
 ```
 
-### Configuration Options
+### 3. Database Setup
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `mysql.enabled` | Enable MySQL connection | `true` |
-| `mysql.url` | MySQL connection URL | - |
-| `mysql.user` | MySQL username | - |
-| `mysql.password` | MySQL password | - |
-| `sync-interval-ticks` | How often to sync online players (in ticks) | `1728000` (24h) |
-| `minimum-playtime-ticks` | Minimum playtime required for sync | `72000` (1h) |
-| `sync-on-join` | Sync stats when players join | `true` |
-| `placeholderapi.enabled` | Enable PlaceholderAPI integration | `true` |
-| `towny.enabled` | Enable Towny integration | `true` |
-| `export.interval-ticks` | How often to export data (in ticks) | `72000` (1h) |
-| `export.compression` | Compress exported files | `true` |
-| `logging.level` | Logging level (minimal/verbose/debug) | `verbose` |
+#### MySQL Setup
+Run the provided `setup.sql` script in your MySQL database.
 
-## 🗄️ Database Schema
+#### Supabase Setup
+1. Go to your Supabase project dashboard
+2. Navigate to SQL Editor
+3. Run the provided `supabase_setup.sql` script
+4. Copy your project URL and anon key from Settings > API
 
-The plugin creates the following tables:
+### 4. Configure & Start
+1. Edit `plugins/PlayerStatsToMySQL/config.yml`
+2. Set your database credentials
+3. Start your server
+4. Use `/sqlstats sync` for initial sync
 
-### `players`
-- `player_uuid` (VARCHAR(36)) - Player's UUID
-- `player_name` (VARCHAR(16)) - Player's username
-- `first_joined` (TIMESTAMP) - First time player was synced
-- `last_updated` (TIMESTAMP) - Last sync time
+## Configuration
 
-### `stats_[category]`
-- `player_uuid` (VARCHAR(36)) - Player's UUID
-- `stat_key` (VARCHAR(255)) - Stat name (without "minecraft:" prefix)
-- `stat_value` (BIGINT) - Stat value
+### Database Configuration
+```yaml
+# Choose database type: mysql, supabase, or both
+database:
+  type: "mysql"
 
-Categories: `broken`, `crafted`, `dropped`, `killed`, `killed_by`, `picked_up`, `mined`, `custom`, `used`, `towny`
+# MySQL Configuration
+mysql:
+  enabled: true
+  url: "jdbc:mysql://localhost:3306/playerstats"
+  user: "your_username"
+  password: "your_password"
 
-### `stats_placeholders`
-- `player_uuid` (VARCHAR(36)) - Player's UUID
-- `placeholder_key` (VARCHAR(255)) - Placeholder name
-- `value` (LONGTEXT) - Placeholder value
+# Supabase Configuration
+supabase:
+  enabled: false
+  url: "https://your-project.supabase.co"
+  key: "your-anon-key"
+  
+  # Performance settings for rate limiting
+  performance:
+    batch_size: 1  # Sync one player at a time
+    batch_delay_ms: 1000  # 1 second between batches
+    max_concurrent_requests: 1  # Sequential processing
+    timeout_seconds: 30  # Request timeout
+    
+  # Sync settings
+  sync:
+    on_player_quit: true  # Update when player leaves
+    batch_sync_interval: 300000  # 5 minutes between batch syncs
+    real_time_updates: false  # Disable for performance
+```
 
-## 📊 Commands
+### Sync Settings
+```yaml
+# Sync intervals and settings
+sync-interval-ticks: 1728000  # 24 hours in ticks
+minimum-playtime-ticks: 72000 # 1 hour minimum playtime required
+sync-on-join: true
+```
+
+### PlaceholderAPI Integration
+```yaml
+placeholderapi:
+  enabled: true
+  placeholders: # Enter placeholders without % (e.g., vault_balance, not %vault_balance%)
+    - vault_eco_balance
+  blacklist: # Enter placeholders to exclude without %
+    - townyadvanced_townboard
+    - townyadvanced_nationboard
+```
+
+## Commands
 
 | Command | Permission | Description |
 |---------|------------|-------------|
-| `/sqlstats sync` | `playerstatstomysql.sqlstats.sync` | Sync all player stats to database |
-| `/sqlstats export [json]` | `playerstatstomysql.sqlstats.export` | Export stats to JSON file |
-| `/sqlstats view <player> <category>` | `playerstatstomysql.sqlstats.view` | View player stats for a category |
+| `/sqlstats sync` | `playerstatstomysql.sqlstats.sync` | Sync all player stats |
+| `/sqlstats export [json]` | `playerstatstomysql.sqlstats.export` | Export stats to file |
+| `/sqlstats view <player> <category>` | `playerstatstomysql.sqlstats.view` | View player stats |
 | `/sqlstats reload` | `playerstatstomysql.sqlstats.reload` | Reload configuration |
-| `/sqlstats placeholder <list\|add\|blacklist>` | `playerstatstomysql.sqlstats.placeholder` | Manage placeholders |
 | `/sqlstats status` | `playerstatstomysql.sqlstats.status` | Check plugin status |
-| `/sqlstats versioncheck` | `playerstatstomysql.sqlstats.versioncheck` | Check server version compatibility |
-| `/sqlstats cleanup` | `playerstatstomysql.sqlstats.cleanup` | Clean up old data |
-| `/sqlstats stop` | `playerstatstomysql.sqlstats.stop` | Disable plugin |
-| `/sqlstats start` | `playerstatstomysql.sqlstats.start` | Enable plugin |
-| `/sqlstats help` | `playerstatstomysql.sqlstats.help` | Show help message |
+| `/sqlstats help` | `playerstatstomysql.sqlstats.help` | Show help |
 
-## 🔧 Usage Examples
+## Database Schema
 
-### Initial Setup
-```bash
-# First, sync all existing player stats
-/sqlstats sync
+### MySQL Schema
+```sql
+-- Players table
+CREATE TABLE players (
+    uuid VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    last_seen BIGINT NOT NULL
+);
 
-# Check plugin status
-/sqlstats status
-
-# View a player's stats
-/sqlstats view PlayerName mined
+-- Stats tables (one per category)
+CREATE TABLE stats_minecraft_custom (
+    player_uuid VARCHAR(36),
+    stat_key VARCHAR(255),
+    stat_value BIGINT,
+    PRIMARY KEY (player_uuid, stat_key),
+    FOREIGN KEY (player_uuid) REFERENCES players(uuid)
+);
 ```
 
-### Exporting Data
-```bash
-# Export current data to JSON
-/sqlstats export
+### Supabase Schema
+```sql
+-- Players table
+CREATE TABLE players (
+    uuid UUID PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    last_seen BIGINT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-# Export with specific format (only JSON supported)
-/sqlstats export json
+-- Player stats with JSONB
+CREATE TABLE player_stats (
+    player_uuid UUID PRIMARY KEY REFERENCES players(uuid),
+    stats JSONB NOT NULL DEFAULT '{}',
+    last_updated BIGINT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 ```
 
-### Managing Placeholders
-```bash
-# List available placeholders
-/sqlstats placeholder list
+## Supabase Integration
 
-# Add a new placeholder
-/sqlstats placeholder add vault_eco_balance
+### Advantages
+- **JSONB Storage**: Flexible schema for any stat type
+- **Real-time Ready**: Built for real-time web applications
+- **Built-in Auth**: Easy integration with Supabase Auth
+- **Edge Functions**: Serverless functions for custom logic
+- **Auto-scaling**: Handles traffic spikes automatically
 
-# Blacklist a placeholder
-/sqlstats placeholder blacklist some_placeholder
+### Performance Optimization
+- **Rate Limiting**: Respects Supabase rate limits
+- **Batch Processing**: Processes one player at a time
+- **Efficient UPSERTs**: Uses PostgreSQL's ON CONFLICT
+- **Connection Pooling**: Reuses HTTP connections
+
+### Example Queries
+```sql
+-- Get player stats
+SELECT stats FROM player_stats WHERE player_uuid = 'uuid-here';
+
+-- Get specific stat
+SELECT stats->>'minecraft.custom.play_time' as play_time 
+FROM player_stats WHERE player_uuid = 'uuid-here';
+
+-- Get top players by stat
+SELECT p.name, (ps.stats->>'minecraft.mined.diamond_ore')::int as diamonds
+FROM players p 
+JOIN player_stats ps ON p.uuid = ps.player_uuid
+ORDER BY diamonds DESC LIMIT 10;
 ```
 
-## 📈 Data Export
-
-The plugin automatically exports data to JSON files in the `plugins/PlayerStatsToMySQL/exports/` directory. Files are named with timestamps and can be compressed.
-
-Example export structure:
-```json
-{
-  "timestamp": "2024-01-01T12:00:00",
-  "players": [
-    {
-      "uuid": "player-uuid",
-      "name": "PlayerName",
-      "first_joined": "2024-01-01T10:00:00",
-      "last_updated": "2024-01-01T12:00:00",
-      "stats_mined": {
-        "stone": 1000,
-        "dirt": 500
-      },
-      "stats_placeholders": [
-        {"key": "vault_eco_balance", "value": "1000.0"}
-      ]
-    }
-  ]
-}
-```
-
-## 🏘️ Towny Integration
-
-When Towny integration is enabled, the plugin tracks:
-- Town membership
-- Nation membership
-- Mayor/King status
-- Town and nation balances
-
-Towny data is stored in the `stats_towny` table with keys like:
-- `town` - Town name
-- `nation` - Nation name
-- `is_mayor` - Whether player is town mayor
-- `is_king` - Whether player is nation king
-- `town_balance` - Town's balance
-- `nation_balance` - Nation's balance
-
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
-**Database Connection Failed**
-- Check MySQL credentials in config.yml
-- Ensure MySQL server is running
-- Verify database exists and user has proper permissions
+#### Plugin Won't Start
+- Check database connection settings
+- Ensure database exists and user has permissions
+- Verify Supabase URL and API key
 
-**Stats Not Syncing**
+#### Stats Not Syncing
 - Check if players meet minimum playtime requirement
-- Verify plugin is enabled (`/sqlstats status`)
+- Verify database tables exist
 - Check console for error messages
 
-**Towny Data Not Appearing**
-- Ensure Towny plugin is installed and enabled
-- Check `towny.enabled` in config.yml
-- Verify Towny API is accessible
+#### Supabase Rate Limits
+- Increase `batch_delay_ms` in config
+- Reduce `batch_size` to 1
+- Check Supabase dashboard for rate limit errors
 
-### Logging
+### Debug Commands
+```bash
+# Check plugin status
+/sqlstats status
 
-Set `logging.level` to `debug` for detailed information:
-```yaml
-logging:
-  level: debug
+# View specific player stats
+/sqlstats view PlayerName minecraft.custom
+
+# Force sync all players
+/sqlstats sync
+
+# Check server version compatibility
+/sqlstats versioncheck
 ```
 
-## 🤝 Contributing
+## Development
+
+### Building from Source
+```bash
+git clone https://github.com/your-username/PlayerStatsToMySQL.git
+cd PlayerStatsToMySQL
+mvn clean package
+```
+
+### Dependencies
+- **Spigot API**: Minecraft server API
+- **HikariCP**: Database connection pooling
+- **OkHttp**: HTTP client for Supabase
+- **Gson**: JSON processing
+- **PostgreSQL JDBC**: Supabase database driver
+
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Support
 
-- Built for Minecraft servers using Paper/Spigot
-- Integrates with PlaceholderAPI for extended functionality
-- Supports Towny for town/nation data tracking
-- Uses HikariCP for efficient database connections
+- **Issues**: [GitHub Issues](https://github.com/your-username/PlayerStatsToMySQL/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-username/PlayerStatsToMySQL/discussions)
+- **Wiki**: [GitHub Wiki](https://github.com/your-username/PlayerStatsToMySQL/wiki)
 
-## 📞 Support
+## Changelog
 
-If you encounter any issues or have questions:
-1. Check the troubleshooting section above
-2. Review the console logs for error messages
-3. Open an issue on GitHub with detailed information
+### v1.0 (Current)
+- ✨ Added Supabase support
+- 🔄 Dual database support (MySQL + Supabase)
+- 🚀 Improved performance with rate limiting
+- 🧹 Cleaner stat names (removed "minecraft:" prefix)
+- 🔧 Better error handling and logging
+- 📊 Enhanced configuration options
 
----
-
-**Made with ❤️ for the Minecraft community**
+### v2.0 (Previous)
+- Initial MySQL-only release
+- Basic stat syncing
+- PlaceholderAPI integration
+- Towny integration

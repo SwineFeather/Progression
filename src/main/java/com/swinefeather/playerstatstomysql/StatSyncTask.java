@@ -20,12 +20,14 @@ import org.json.simple.parser.JSONParser;
 public class StatSyncTask {
     private final JavaPlugin plugin;
     private final DatabaseManager dbManager;
+    private final SupabaseManager supabaseManager;
     private final PlaceholderManager placeholderManager;
     private final long minimumPlaytimeTicks;
 
-    public StatSyncTask(JavaPlugin plugin, DatabaseManager dbManager, PlaceholderManager placeholderManager) {
+    public StatSyncTask(JavaPlugin plugin, DatabaseManager dbManager, SupabaseManager supabaseManager, PlaceholderManager placeholderManager) {
         this.plugin = plugin;
         this.dbManager = dbManager;
+        this.supabaseManager = supabaseManager;
         this.placeholderManager = placeholderManager;
         this.minimumPlaytimeTicks = plugin.getConfig().getLong("minimum-playtime-ticks", 0L);
     }
@@ -40,51 +42,64 @@ public class StatSyncTask {
 
         try {
             for (World world : plugin.getServer().getWorlds()) {
-                plugin.getLogger().info(String.format("Checking world: %s", world.getName()));
+                plugin.getLogger().info(String.format("[PlayerStatsToMySQL] Checking world: %s", world.getName()));
                 File statsFolder = new File(world.getWorldFolder(), "stats");
                 if (!statsFolder.exists() || !statsFolder.isDirectory()) {
-                    plugin.getLogger().warning(String.format("Stats folder not found in world: %s", world.getName()));
+                    plugin.getLogger().warning(String.format("[PlayerStatsToMySQL] Stats folder not found in world: %s", world.getName()));
                     continue;
                 }
 
                 File[] statFiles = statsFolder.listFiles((dir, name) -> name.endsWith(".json"));
                 if (statFiles == null) {
-                    plugin.getLogger().warning(String.format("No stat files found in: %s", statsFolder.getPath()));
+                    plugin.getLogger().warning(String.format("[PlayerStatsToMySQL] No stat files found in: %s", statsFolder.getPath()));
                     continue;
                 }
 
                 for (File statFile : statFiles) {
                     try {
                         UUID playerUUID = UUID.fromString(statFile.getName().replace(".json", ""));
-                        plugin.getLogger().info(String.format("Processing stat file for UUID: %s", playerUUID));
+                        plugin.getLogger().info(String.format("[PlayerStatsToMySQL] Processing stat file for UUID: %s", playerUUID));
                         if (!hasMinimumPlaytime(statFile)) {
-                            plugin.getLogger().info(String.format("Skipping %s: Playtime below %d ticks", playerUUID, minimumPlaytimeTicks));
+                            plugin.getLogger().info(String.format("[PlayerStatsToMySQL] Skipping %s: Playtime below %d ticks", playerUUID, minimumPlaytimeTicks));
                             continue;
                         }
                         String playerName = plugin.getServer().getOfflinePlayer(playerUUID).getName();
                         if (playerName == null) {
                             playerName = "Unknown_" + playerUUID.toString().substring(0, 8);
-                            plugin.getLogger().warning(String.format("Player name not found for UUID: %s, using: %s", playerUUID, playerName));
+                            plugin.getLogger().warning(String.format("[PlayerStatsToMySQL] Player name not found for UUID: %s, using: %s", playerUUID, playerName));
                         }
-                        dbManager.savePlayerInfo(playerUUID, playerName);
-                        syncPlayerStats(playerUUID, statFile);
-                        placeholderManager.syncPlayerPlaceholders(playerUUID);
+                        
+                        // Save to MySQL if available
+                        if (dbManager != null && dbManager.isConnected()) {
+                            dbManager.savePlayerInfo(playerUUID, playerName);
+                            syncPlayerStats(playerUUID, statFile);
+                        }
+                        
+                        // Save to Supabase for ALL players (online and offline)
+                        if (supabaseManager != null && supabaseManager.isEnabled()) {
+                            Map<String, Object> stats = collectPlayerStats(playerUUID, statFile);
+                            supabaseManager.syncPlayerStats(playerUUID, playerName, stats);
+                        }
+                        
+                        if (placeholderManager != null) {
+                            placeholderManager.syncPlayerPlaceholders(playerUUID);
+                        }
                     } catch (IllegalArgumentException e) {
-                        plugin.getLogger().warning(String.format("Invalid UUID in file: %s", statFile.getName()));
+                        plugin.getLogger().warning(String.format("[PlayerStatsToMySQL] Invalid UUID in file: %s", statFile.getName()));
                     } catch (Exception e) {
-                        plugin.getLogger().warning(String.format("Error processing stat file %s: %s", statFile.getName(), e.getMessage()));
+                        plugin.getLogger().warning(String.format("[PlayerStatsToMySQL] Error processing stat file %s: %s", statFile.getName(), e.getMessage()));
                     }
                 }
             }
             if (sender != null) {
                 sender.sendMessage("§aFull stat sync completed!");
             }
-            plugin.getLogger().info("Full stat sync finished successfully.");
+            plugin.getLogger().info("[PlayerStatsToMySQL] Full stat sync finished successfully.");
         } catch (Exception e) {
             if (sender != null) {
                 sender.sendMessage(String.format("§cStat sync failed: %s", e.getMessage()));
             }
-            plugin.getLogger().severe(String.format("Full stat sync failed: %s", e.getMessage()));
+            plugin.getLogger().severe(String.format("[PlayerStatsToMySQL] Full stat sync failed: %s", e.getMessage()));
         }
     }
 
@@ -97,11 +112,39 @@ public class StatSyncTask {
         }
 
         try {
+            Map<Player, Map<String, Object>> allPlayerStats = new HashMap<>();
+            
             for (Player player : plugin.getServer().getOnlinePlayers()) {
                 UUID playerUUID = player.getUniqueId();
                 plugin.getLogger().info(String.format("Syncing stats for online player: %s", playerUUID));
-                syncSinglePlayer(playerUUID, sender);
+                
+                // Collect stats for both MySQL and Supabase
+                Map<String, Object> stats = collectPlayerStatsFromWorlds(playerUUID);
+                
+                // Save to MySQL if available
+                if (dbManager != null && dbManager.isConnected()) {
+                    syncSinglePlayer(playerUUID, sender);
+                }
+                
+                // Prepare for Supabase batch sync
+                if (supabaseManager != null && supabaseManager.isEnabled()) {
+                    allPlayerStats.put(player, stats);
+                }
             }
+            
+            // Batch sync to Supabase
+            if (supabaseManager != null && supabaseManager.isEnabled() && !allPlayerStats.isEmpty()) {
+                supabaseManager.syncAllPlayers(allPlayerStats);
+            }
+
+            // Trigger award calculation after stat sync
+            if (plugin instanceof Main) {
+                Main main = (Main) plugin;
+                if (main.awardManager != null && main.awardManager.isEnabled()) {
+                    main.awardManager.calculateAllAwards(allPlayerStats);
+                }
+            }
+            
             if (sender != null) {
                 sender.sendMessage("§aOnline player stat sync completed!");
             }
@@ -140,9 +183,25 @@ public class StatSyncTask {
                     playerName = "Unknown_" + playerUUID.toString().substring(0, 8);
                     plugin.getLogger().warning(String.format("Player name not found for UUID: %s, using: %s", playerUUID, playerName));
                 }
-                dbManager.savePlayerInfo(playerUUID, playerName);
-                syncPlayerStats(playerUUID, statFile);
-                placeholderManager.syncPlayerPlaceholders(playerUUID);
+                
+                // Save to MySQL if available
+                if (dbManager != null && dbManager.isConnected()) {
+                    dbManager.savePlayerInfo(playerUUID, playerName);
+                    syncPlayerStats(playerUUID, statFile);
+                }
+                
+                // Save to Supabase if available
+                if (supabaseManager != null && supabaseManager.isEnabled()) {
+                    Player player = plugin.getServer().getPlayer(playerUUID);
+                    if (player != null) {
+                        Map<String, Object> stats = collectPlayerStats(playerUUID, statFile);
+                        supabaseManager.syncPlayerStats(player, stats);
+                    }
+                }
+                
+                if (placeholderManager != null) {
+                    placeholderManager.syncPlayerPlaceholders(playerUUID);
+                }
             }
             if (sender != null) {
                 sender.sendMessage(String.format("§aStat sync for player %s completed!", playerUUID));
@@ -154,6 +213,88 @@ public class StatSyncTask {
             }
             plugin.getLogger().severe(String.format("Stat sync for player %s failed: %s", playerUUID, e.getMessage()));
         }
+    }
+    
+    public void onPlayerQuit(Player player) {
+        if (supabaseManager != null && supabaseManager.isEnabled()) {
+            UUID playerUUID = player.getUniqueId();
+            Map<String, Object> stats = collectPlayerStatsFromWorlds(playerUUID);
+            supabaseManager.onPlayerQuit(player, stats);
+        }
+    }
+    
+    private Map<String, Object> collectPlayerStatsFromWorlds(UUID playerUUID) {
+        Map<String, Object> allStats = new HashMap<>();
+        
+        for (World world : plugin.getServer().getWorlds()) {
+            File statFile = new File(world.getWorldFolder(), "stats/" + playerUUID + ".json");
+            if (statFile.exists()) {
+                Map<String, Object> worldStats = collectPlayerStats(playerUUID, statFile);
+                allStats.putAll(worldStats);
+            }
+        }
+        
+        return allStats;
+    }
+    
+    private Map<String, Object> collectPlayerStats(UUID playerUUID, File statFile) {
+        Map<String, Object> stats = new HashMap<>();
+        try (FileReader reader = new FileReader(statFile)) {
+            JSONParser parser = new JSONParser();
+            JSONObject json = (JSONObject) parser.parse(reader);
+            
+            // Collect stats
+            JSONObject statsSection = (JSONObject) json.get("stats");
+            if (statsSection != null) {
+                for (Object categoryObj : statsSection.keySet()) {
+                    String category = (String) categoryObj;
+                    JSONObject categoryStats = (JSONObject) statsSection.get(category);
+                    Map<String, Object> categoryData = new HashMap<>();
+                    
+                    for (Object statObj : categoryStats.keySet()) {
+                        String statKey = statObj.toString();
+                        Object valueObj = categoryStats.get(statKey);
+                        String cleanStatKey = statKey.replace("minecraft:", "");
+                        
+                        if (valueObj instanceof Long) {
+                            categoryData.put(cleanStatKey, (Long) valueObj);
+                        } else if (valueObj instanceof Integer) {
+                            categoryData.put(cleanStatKey, ((Integer) valueObj).longValue());
+                        } else {
+                            categoryData.put(cleanStatKey, valueObj.toString());
+                        }
+                    }
+                    
+                    String cleanCategory = category.replace("minecraft:", "");
+                    stats.put(cleanCategory, categoryData);
+                }
+            }
+            
+            // Collect advancements
+            JSONObject advancementsSection = (JSONObject) json.get("advancements");
+            if (advancementsSection != null) {
+                Map<String, Object> advancementsData = new HashMap<>();
+                for (Object advancementObj : advancementsSection.keySet()) {
+                    String advancementKey = advancementObj.toString();
+                    Object advancementValue = advancementsSection.get(advancementKey);
+                    String cleanAdvancementKey = advancementKey.replace("minecraft:", "");
+                    
+                    if (advancementValue instanceof JSONObject) {
+                        JSONObject criteria = (JSONObject) advancementValue;
+                        if (!criteria.isEmpty()) {
+                            advancementsData.put(cleanAdvancementKey, true);
+                        }
+                    } else if (advancementValue instanceof Boolean) {
+                        advancementsData.put(cleanAdvancementKey, (Boolean) advancementValue);
+                    }
+                }
+                stats.put("advancements", advancementsData);
+            }
+            
+        } catch (Exception e) {
+            plugin.getLogger().warning(String.format("Failed to collect stats from %s: %s", statFile.getName(), e.getMessage()));
+        }
+        return stats;
     }
 
     private boolean hasMinimumPlaytime(File statFile) {
@@ -199,56 +340,70 @@ public class StatSyncTask {
                     }
                     categorizedStats.put(category, stats);
                 }
-                plugin.getLogger().info(String.format("Parsed %d stat categories for %s", categorizedStats.size(), playerUUID));
-            } else {
-                plugin.getLogger().warning(String.format("No stats section in JSON for %s", playerUUID));
             }
 
-            for (Map.Entry<String, Map<String, Long>> entry : categorizedStats.entrySet()) {
-                dbManager.savePlayerStats(entry.getKey().replace("minecraft:", ""), playerUUID, entry.getValue());
+            if (dbManager != null && dbManager.isConnected()) {
+                for (Map.Entry<String, Map<String, Long>> entry : categorizedStats.entrySet()) {
+                    String category = entry.getKey().replace("minecraft:", "");
+                    Map<String, Long> stats = entry.getValue();
+                    dbManager.savePlayerStats(category, playerUUID, stats);
+                }
+            }
+            
+            // Save placeholder stats to Supabase if available
+            if (supabaseManager != null && supabaseManager.isEnabled()) {
+                // This will be handled by the Supabase sync
+                plugin.getLogger().info("Supabase sync will handle placeholder stats");
             }
         } catch (Exception e) {
-            plugin.getLogger().warning(String.format("Failed to sync stats for %s: %s", playerUUID, e.getMessage()));
+            plugin.getLogger().severe(String.format("Failed to sync player stats for %s: %s", playerUUID, e.getMessage()));
         }
     }
 
     @SuppressWarnings("deprecation")
     public void viewStats(CommandSender sender, String playerName, String category) {
-        if (!plugin.getServer().getPluginManager().isPluginEnabled(plugin)) {
-            sender.sendMessage("§cPlugin is disabled. Use /sqlstats start to enable.");
+        if (dbManager == null || !dbManager.isConnected()) {
+            sender.sendMessage("§cDatabase not connected!");
             return;
         }
 
-        try (Connection conn = dbManager.getConnection()) {
-            String tableName = "stats_" + category.replaceAll("[^a-zA-Z0-9_]", "_");
-            UUID playerUUID = plugin.getServer().getOfflinePlayer(playerName).getUniqueId();
-            boolean hasStats = false;
-            sender.sendMessage(String.format("§aStats for %s (%s):", playerName, category));
+        try {
+            Player player = plugin.getServer().getPlayer(playerName);
+            UUID playerUUID = player != null ? player.getUniqueId() : plugin.getServer().getOfflinePlayer(playerName).getUniqueId();
 
-            try (PreparedStatement stmt = conn.prepareStatement(
-                    "SELECT stat_key, stat_value FROM " + tableName + " WHERE player_uuid = ?")) {
-                stmt.setString(1, playerUUID.toString());
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        String statKey = rs.getString("stat_key");
-                        long value = rs.getLong("stat_value");
-                        if (value > 0) {
-                            sender.sendMessage(String.format("§7%s: §e%d", statKey, value));
-                            hasStats = true;
-                        }
-                    }
-                }
-            } catch (SQLException e) {
-                sender.sendMessage(String.format("§cCategory not found: %s", category));
+            if (playerUUID == null) {
+                sender.sendMessage("§cPlayer not found: " + playerName);
                 return;
             }
 
-            if (!hasStats) {
-                sender.sendMessage(String.format("§cNo stats found for %s in %s", playerName, category));
+            Connection connection = dbManager.getConnection();
+            if (connection == null) {
+                sender.sendMessage("§cDatabase connection failed!");
+                return;
             }
-        } catch (SQLException e) {
-            sender.sendMessage(String.format("§cError viewing stats: %s", e.getMessage()));
-            plugin.getLogger().severe(String.format("Failed to view stats for %s: %s", playerName, e.getMessage()));
+
+            String sql = "SELECT stat_name, stat_value FROM player_stats WHERE player_uuid = ? AND stat_category = ?";
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                stmt.setString(1, playerUUID.toString());
+                stmt.setString(2, category);
+
+                try (ResultSet rs = stmt.executeQuery()) {
+                    sender.sendMessage("§aStats for " + playerName + " in category " + category + ":");
+                    boolean found = false;
+                    while (rs.next()) {
+                        String statName = rs.getString("stat_name");
+                        Long statValue = rs.getLong("stat_value");
+                        sender.sendMessage("§7" + statName + ": " + statValue);
+                        found = true;
+                    }
+                    if (!found) {
+                        sender.sendMessage("§eNo stats found for this category.");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            sender.sendMessage("§cError viewing stats: " + e.getMessage());
+            plugin.getLogger().severe("Error viewing stats: " + e.getMessage());
         }
     }
 }

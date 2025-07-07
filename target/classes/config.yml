@@ -1,18 +1,40 @@
 # PlayerStatsToMySQL Configuration
-# Edit this file to configure your MySQL database connection and plugin settings
+# Edit this file to configure your database connection and plugin settings
 
+# Database Configuration
+database:
+  # Choose your database type: "mysql", "supabase", or "both"
+  type: "supabase"  # Options: mysql, supabase, both
+
+# MySQL Configuration (if using mysql or both)
 mysql:
-  # Enable/disable MySQL connection
-  enabled: true
-  
-  # MySQL connection settings - UPDATE THESE WITH YOUR ACTUAL DATABASE INFO
+  enabled: false
   url: "jdbc:mysql://localhost:3306/playerstats"
   user: "your_username"
   password: "your_password"
 
+# Supabase Configuration (if using supabase or both)
+supabase:
+  enabled: true
+  url: "https://erdconvorgecupvavlwv.supabase.co"
+  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVyZGNvbnZvcmdlY3VwdmF2bHd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODM4ODcsImV4cCI6MjA2NTE1OTg4N30.1JAp47oJDpiNmnKjpYB_tS9__0Sytk18o8dL-Dfnrdg"
+  
+  # Performance settings for rate limiting
+  performance:
+    batch_size: 1  # Sync one player at a time
+    batch_delay_ms: 1000  # 1 second between batches
+    max_concurrent_requests: 1  # Sequential processing
+    timeout_seconds: 30  # Request timeout
+    
+  # Sync settings
+  sync:
+    on_player_quit: true  # Update when player leaves
+    batch_sync_interval: 300000  # 5 minutes between batch syncs
+    real_time_updates: false  # Disable for performance
+
 # Sync settings
-sync-interval-ticks: 1728000 # 24 hours in ticks (20 ticks = 1 second)
-minimum-playtime-ticks: 72000 # 1 hour minimum playtime required for sync
+sync-interval-ticks: 1728000  # 24 hours in ticks (20 ticks = 1 second)
+minimum-playtime-ticks: 1000  # 50 seconds minimum playtime required for sync (much lower for testing)
 sync-on-join: true
 
 # PlaceholderAPI integration
@@ -41,3 +63,742 @@ export:
 # Logging level (minimal/verbose/debug)
 logging:
   level: verbose
+
+# Award System Configuration
+awards:
+  enabled: true
+  auto_calculate: true
+  calculation_interval: 3600  # seconds
+  medal_change_notifications: true
+  award_announcements: true
+  website_url: ""
+  
+  # Tier point values
+  tiers:
+    stone:
+      bronze: 0.5
+      silver: 1.0
+      gold: 2.0
+    iron:
+      bronze: 1.0
+      silver: 2.0
+      gold: 4.0
+    diamond:
+      bronze: 3.0
+      silver: 4.0
+      gold: 6.0
+  
+  # Award definitions
+  definitions:
+    # Combat Awards
+    most_kills:
+      name: "Warrior"
+      description: "Player with the highest kill count"
+      tier: "stone"
+      stat_path: "minecraft_killed.kills"
+      enabled: true
+    
+    most_deaths:
+      name: "Cannon Fodder"
+      description: "Player with the highest death count"
+      tier: "stone"
+      stat_path: "minecraft_killed_by.deaths"
+      enabled: true
+    
+    most_damage_dealt:
+      name: "Damage Dealer"
+      description: "Player who dealt the most damage"
+      tier: "iron"
+      stat_path: "minecraft_damage_dealt.damage_dealt"
+      enabled: true
+    
+    most_damage_taken:
+      name: "Damage Sponge"
+      description: "Player who took the most damage"
+      tier: "stone"
+      stat_path: "minecraft_damage_taken.damage_taken"
+      enabled: true
+    
+    most_damage_blocked:
+      name: "Shield Master"
+      description: "Player who blocked the most damage with shield"
+      tier: "iron"
+      stat_path: "minecraft_damage_blocked_by_shield.damage_blocked_by_shield"
+      enabled: true
+    
+    longest_survival:
+      name: "Survivor"
+      description: "Player with the longest time since death"
+      tier: "iron"
+      stat_path: "minecraft_custom.time_since_death"
+      enabled: true
+    
+    # Movement Awards
+    most_distance_walked:
+      name: "Wanderer"
+      description: "Player who walked the farthest"
+      tier: "stone"
+      stat_path: "minecraft_custom.walk_one_cm"
+      enabled: true
+    
+    most_distance_sprinted:
+      name: "Speed Demon"
+      description: "Player who sprinted the farthest"
+      tier: "stone"
+      stat_path: "minecraft_custom.sprint_one_cm"
+      enabled: true
+    
+    most_distance_swum:
+      name: "Swimmer"
+      description: "Player who swam the farthest"
+      tier: "stone"
+      stat_path: "minecraft_custom.swim_one_cm"
+      enabled: true
+    
+    most_distance_fallen:
+      name: "Gravity Victim"
+      description: "Player who fell the farthest"
+      tier: "stone"
+      stat_path: "minecraft_custom.fall_one_cm"
+      enabled: true
+    
+    most_distance_flown:
+      name: "Bird"
+      description: "Player who flew the farthest"
+      tier: "iron"
+      stat_path: "minecraft_custom.fly_one_cm"
+      enabled: true
+    
+    most_jumps:
+      name: "Bunny"
+      description: "Player who jumped the most"
+      tier: "stone"
+      stat_path: "minecraft_custom.jump"
+      enabled: true
+    
+    most_distance_ridden:
+      name: "Rider"
+      description: "Player who rode the farthest"
+      tier: "stone"
+      stat_path: "minecraft_custom.ride_one_cm"
+      enabled: true
+    
+    most_distance_boat:
+      name: "Sailor"
+      description: "Player who traveled farthest by boat"
+      tier: "stone"
+      stat_path: "minecraft_custom.boat_one_cm"
+      enabled: true
+    
+    most_distance_horse:
+      name: "Cowboy"
+      description: "Player who traveled farthest on horse"
+      tier: "stone"
+      stat_path: "minecraft_custom.horse_one_cm"
+      enabled: true
+    
+    most_distance_minecart:
+      name: "Conductor"
+      description: "Player who traveled farthest in minecart"
+      tier: "stone"
+      stat_path: "minecraft_custom.minecart_one_cm"
+      enabled: true
+    
+    most_distance_strider:
+      name: "Nether Walker"
+      description: "Player who traveled farthest on strider"
+      tier: "iron"
+      stat_path: "minecraft_custom.strider_one_cm"
+      enabled: true
+    
+    # Mining Awards
+    most_blocks_mined:
+      name: "Miner"
+      description: "Player who mined the most blocks"
+      tier: "stone"
+      stat_path: "minecraft_mined.mined"
+      enabled: true
+    
+    most_diamonds_mined:
+      name: "Diamond Hunter"
+      description: "Player who mined the most diamonds"
+      tier: "diamond"
+      stat_path: "minecraft_mined.diamond_ore"
+      enabled: true
+    
+    most_iron_mined:
+      name: "Iron Miner"
+      description: "Player who mined the most iron"
+      tier: "stone"
+      stat_path: "minecraft_mined.iron_ore"
+      enabled: true
+    
+    most_coal_mined:
+      name: "Coal Miner"
+      description: "Player who mined the most coal"
+      tier: "stone"
+      stat_path: "minecraft_mined.coal_ore"
+      enabled: true
+    
+    most_gold_mined:
+      name: "Gold Digger"
+      description: "Player who mined the most gold"
+      tier: "iron"
+      stat_path: "minecraft_mined.gold_ore"
+      enabled: true
+    
+    most_emeralds_mined:
+      name: "Emerald Hunter"
+      description: "Player who mined the most emeralds"
+      tier: "iron"
+      stat_path: "minecraft_mined.emerald_ore"
+      enabled: true
+    
+    most_redstone_mined:
+      name: "Redstone Engineer"
+      description: "Player who mined the most redstone"
+      tier: "stone"
+      stat_path: "minecraft_mined.redstone_ore"
+      enabled: true
+    
+    most_lapis_mined:
+      name: "Lapis Collector"
+      description: "Player who mined the most lapis"
+      tier: "stone"
+      stat_path: "minecraft_mined.lapis_ore"
+      enabled: true
+    
+    most_quartz_mined:
+      name: "Nether Miner"
+      description: "Player who mined the most quartz"
+      tier: "iron"
+      stat_path: "minecraft_mined.nether_quartz_ore"
+      enabled: true
+    
+    most_ancient_debris_mined:
+      name: "Netherite Hunter"
+      description: "Player who mined the most ancient debris"
+      tier: "diamond"
+      stat_path: "minecraft_mined.ancient_debris"
+      enabled: true
+    
+    most_obsidian_mined:
+      name: "Obsidian Cutter"
+      description: "Player who mined the most obsidian"
+      tier: "iron"
+      stat_path: "minecraft_mined.obsidian"
+      enabled: true
+    
+    most_stone_mined:
+      name: "Stone Mason"
+      description: "Player who mined the most stone"
+      tier: "stone"
+      stat_path: "minecraft_mined.stone"
+      enabled: true
+    
+    most_deepslate_mined:
+      name: "Deep Miner"
+      description: "Player who mined the most deepslate"
+      tier: "iron"
+      stat_path: "minecraft_mined.deepslate"
+      enabled: true
+    
+    most_copper_mined:
+      name: "Copper Miner"
+      description: "Player who mined the most copper"
+      tier: "stone"
+      stat_path: "minecraft_mined.copper_ore"
+      enabled: true
+    
+    most_amethyst_mined:
+      name: "Crystal Hunter"
+      description: "Player who mined the most amethyst"
+      tier: "iron"
+      stat_path: "minecraft_mined.amethyst_cluster"
+      enabled: true
+    
+    # Crafting Awards
+    most_crafting:
+      name: "Crafter"
+      description: "Player who crafted the most items"
+      tier: "stone"
+      stat_path: "minecraft_crafted.crafted"
+      enabled: true
+    
+    most_crafting_table:
+      name: "Table Master"
+      description: "Player who crafted the most crafting tables"
+      tier: "stone"
+      stat_path: "minecraft_crafted.crafting_table"
+      enabled: true
+    
+    most_furnace:
+      name: "Smelter"
+      description: "Player who crafted the most furnaces"
+      tier: "stone"
+      stat_path: "minecraft_crafted.furnace"
+      enabled: true
+    
+    most_chest:
+      name: "Storage Master"
+      description: "Player who crafted the most chests"
+      tier: "stone"
+      stat_path: "minecraft_crafted.chest"
+      enabled: true
+    
+    most_torch:
+      name: "Light Bringer"
+      description: "Player who crafted the most torches"
+      tier: "stone"
+      stat_path: "minecraft_crafted.torch"
+      enabled: true
+    
+    most_stick:
+      name: "Stick Collector"
+      description: "Player who crafted the most sticks"
+      tier: "stone"
+      stat_path: "minecraft_crafted.stick"
+      enabled: true
+    
+    most_wooden_pickaxe:
+      name: "Wooden Tool Maker"
+      description: "Player who crafted the most wooden pickaxes"
+      tier: "stone"
+      stat_path: "minecraft_crafted.wooden_pickaxe"
+      enabled: true
+    
+    most_stone_pickaxe:
+      name: "Stone Tool Maker"
+      description: "Player who crafted the most stone pickaxes"
+      tier: "stone"
+      stat_path: "minecraft_crafted.stone_pickaxe"
+      enabled: true
+    
+    most_iron_pickaxe:
+      name: "Iron Tool Maker"
+      description: "Player who crafted the most iron pickaxes"
+      tier: "iron"
+      stat_path: "minecraft_crafted.iron_pickaxe"
+      enabled: true
+    
+    most_diamond_pickaxe:
+      name: "Diamond Tool Maker"
+      description: "Player who crafted the most diamond pickaxes"
+      tier: "diamond"
+      stat_path: "minecraft_crafted.diamond_pickaxe"
+      enabled: true
+    
+    most_netherite_pickaxe:
+      name: "Netherite Tool Maker"
+      description: "Player who crafted the most netherite pickaxes"
+      tier: "diamond"
+      stat_path: "minecraft_crafted.netherite_pickaxe"
+      enabled: true
+    
+    # Farming Awards
+    most_wheat:
+      name: "Wheat Farmer"
+      description: "Player who harvested the most wheat"
+      tier: "stone"
+      stat_path: "minecraft_picked_up.wheat"
+      enabled: true
+    
+    most_potatoes:
+      name: "Potato Farmer"
+      description: "Player who harvested the most potatoes"
+      tier: "stone"
+      stat_path: "minecraft_picked_up.potato"
+      enabled: true
+    
+    most_carrots:
+      name: "Carrot Farmer"
+      description: "Player who harvested the most carrots"
+      tier: "stone"
+      stat_path: "minecraft_picked_up.carrot"
+      enabled: true
+    
+    most_beetroots:
+      name: "Beetroot Farmer"
+      description: "Player who harvested the most beetroots"
+      tier: "stone"
+      stat_path: "minecraft_picked_up.beetroot"
+      enabled: true
+    
+    most_pumpkins:
+      name: "Pumpkin Farmer"
+      description: "Player who harvested the most pumpkins"
+      tier: "stone"
+      stat_path: "minecraft_picked_up.pumpkin"
+      enabled: true
+    
+    most_melons:
+      name: "Melon Farmer"
+      description: "Player who harvested the most melons"
+      tier: "stone"
+      stat_path: "minecraft_picked_up.melon_slice"
+      enabled: true
+    
+    most_sugar_cane:
+      name: "Sugar Cane Farmer"
+      description: "Player who harvested the most sugar cane"
+      tier: "stone"
+      stat_path: "minecraft_picked_up.sugar_cane"
+      enabled: true
+    
+    most_nether_wart:
+      name: "Nether Farmer"
+      description: "Player who harvested the most nether wart"
+      tier: "iron"
+      stat_path: "minecraft_picked_up.nether_wart"
+      enabled: true
+    
+    most_chorus_fruit:
+      name: "End Farmer"
+      description: "Player who harvested the most chorus fruit"
+      tier: "iron"
+      stat_path: "minecraft_picked_up.chorus_fruit"
+      enabled: true
+    
+    most_sweet_berries:
+      name: "Berry Picker"
+      description: "Player who harvested the most sweet berries"
+      tier: "stone"
+      stat_path: "minecraft_picked_up.sweet_berries"
+      enabled: true
+    
+    most_glow_berries:
+      name: "Glow Berry Picker"
+      description: "Player who harvested the most glow berries"
+      tier: "iron"
+      stat_path: "minecraft_picked_up.glow_berries"
+      enabled: true
+    
+    # Fishing Awards
+    most_fish_caught:
+      name: "Fisherman"
+      description: "Player who caught the most fish"
+      tier: "stone"
+      stat_path: "minecraft_fished.fish_caught"
+      enabled: true
+    
+    most_junk_fished:
+      name: "Junk Collector"
+      description: "Player who fished the most junk"
+      tier: "stone"
+      stat_path: "minecraft_fished.junk_fished"
+      enabled: true
+    
+    most_treasure_fished:
+      name: "Treasure Hunter"
+      description: "Player who fished the most treasure"
+      tier: "iron"
+      stat_path: "minecraft_fished.treasure_fished"
+      enabled: true
+    
+    # Building Awards
+    most_blocks_placed:
+      name: "Builder"
+      description: "Player who placed the most blocks"
+      tier: "stone"
+      stat_path: "minecraft_used.used"
+      enabled: true
+    
+    most_stone_placed:
+      name: "Stone Builder"
+      description: "Player who placed the most stone"
+      tier: "stone"
+      stat_path: "minecraft_used.stone"
+      enabled: true
+    
+    most_dirt_placed:
+      name: "Dirt Builder"
+      description: "Player who placed the most dirt"
+      tier: "stone"
+      stat_path: "minecraft_used.dirt"
+      enabled: true
+    
+    most_wood_placed:
+      name: "Wood Builder"
+      description: "Player who placed the most wood"
+      tier: "stone"
+      stat_path: "minecraft_used.oak_planks"
+      enabled: true
+    
+    most_glass_placed:
+      name: "Glass Builder"
+      description: "Player who placed the most glass"
+      tier: "stone"
+      stat_path: "minecraft_used.glass"
+      enabled: true
+    
+    most_torch_placed:
+      name: "Light Placer"
+      description: "Player who placed the most torches"
+      tier: "stone"
+      stat_path: "minecraft_used.torch"
+      enabled: true
+    
+    most_chest_placed:
+      name: "Storage Placer"
+      description: "Player who placed the most chests"
+      tier: "stone"
+      stat_path: "minecraft_used.chest"
+      enabled: true
+    
+    most_furnace_placed:
+      name: "Furnace Placer"
+      description: "Player who placed the most furnaces"
+      tier: "stone"
+      stat_path: "minecraft_used.furnace"
+      enabled: true
+    
+    most_crafting_table_placed:
+      name: "Table Placer"
+      description: "Player who placed the most crafting tables"
+      tier: "stone"
+      stat_path: "minecraft_used.crafting_table"
+      enabled: true
+    
+    # Combat Weapon Awards
+    most_sword_kills:
+      name: "Swordsman"
+      description: "Player who killed the most with swords"
+      tier: "stone"
+      stat_path: "minecraft_killed_by.sword"
+      enabled: true
+    
+    most_axe_kills:
+      name: "Axeman"
+      description: "Player who killed the most with axes"
+      tier: "iron"
+      stat_path: "minecraft_killed_by.axe"
+      enabled: true
+    
+    most_bow_kills:
+      name: "Archer"
+      description: "Player who killed the most with bows"
+      tier: "iron"
+      stat_path: "minecraft_killed_by.bow"
+      enabled: true
+    
+    most_crossbow_kills:
+      name: "Crossbowman"
+      description: "Player who killed the most with crossbows"
+      tier: "iron"
+      stat_path: "minecraft_killed_by.crossbow"
+      enabled: true
+    
+    most_trident_kills:
+      name: "Trident Master"
+      description: "Player who killed the most with tridents"
+      tier: "diamond"
+      stat_path: "minecraft_killed_by.trident"
+      enabled: true
+    
+    # Mob Kill Awards
+    most_zombies_killed:
+      name: "Zombie Slayer"
+      description: "Player who killed the most zombies"
+      tier: "stone"
+      stat_path: "minecraft_killed.zombie"
+      enabled: true
+    
+    most_skeletons_killed:
+      name: "Skeleton Slayer"
+      description: "Player who killed the most skeletons"
+      tier: "stone"
+      stat_path: "minecraft_killed.skeleton"
+      enabled: true
+    
+    most_spiders_killed:
+      name: "Spider Slayer"
+      description: "Player who killed the most spiders"
+      tier: "stone"
+      stat_path: "minecraft_killed.spider"
+      enabled: true
+    
+    most_creepers_killed:
+      name: "Creeper Slayer"
+      description: "Player who killed the most creepers"
+      tier: "iron"
+      stat_path: "minecraft_killed.creeper"
+      enabled: true
+    
+    most_endermen_killed:
+      name: "Enderman Slayer"
+      description: "Player who killed the most endermen"
+      tier: "iron"
+      stat_path: "minecraft_killed.enderman"
+      enabled: true
+    
+    most_blazes_killed:
+      name: "Blaze Slayer"
+      description: "Player who killed the most blazes"
+      tier: "iron"
+      stat_path: "minecraft_killed.blaze"
+      enabled: true
+    
+    most_ghasts_killed:
+      name: "Ghast Slayer"
+      description: "Player who killed the most ghasts"
+      tier: "iron"
+      stat_path: "minecraft_killed.ghast"
+      enabled: true
+    
+    most_wither_skeletons_killed:
+      name: "Wither Skeleton Slayer"
+      description: "Player who killed the most wither skeletons"
+      tier: "diamond"
+      stat_path: "minecraft_killed.wither_skeleton"
+      enabled: true
+    
+    most_piglins_killed:
+      name: "Piglin Slayer"
+      description: "Player who killed the most piglins"
+      tier: "iron"
+      stat_path: "minecraft_killed.piglin"
+      enabled: true
+    
+    most_hoglins_killed:
+      name: "Hoglin Slayer"
+      description: "Player who killed the most hoglins"
+      tier: "iron"
+      stat_path: "minecraft_killed.hoglin"
+      enabled: true
+    
+    most_wardens_killed:
+      name: "Warden Slayer"
+      description: "Player who killed the most wardens"
+      tier: "diamond"
+      stat_path: "minecraft_killed.warden"
+      enabled: true
+    
+    most_elder_guardians_killed:
+      name: "Elder Guardian Slayer"
+      description: "Player who killed the most elder guardians"
+      tier: "diamond"
+      stat_path: "minecraft_killed.elder_guardian"
+      enabled: true
+    
+    most_evokers_killed:
+      name: "Evoker Slayer"
+      description: "Player who killed the most evokers"
+      tier: "diamond"
+      stat_path: "minecraft_killed.evoker"
+      enabled: true
+    
+    most_ravagers_killed:
+      name: "Ravager Slayer"
+      description: "Player who killed the most ravagers"
+      tier: "diamond"
+      stat_path: "minecraft_killed.ravager"
+      enabled: true
+    
+    most_shulkers_killed:
+      name: "Shulker Slayer"
+      description: "Player who killed the most shulkers"
+      tier: "diamond"
+      stat_path: "minecraft_killed.shulker"
+      enabled: true
+    
+    # Interaction Awards
+    most_chests_opened:
+      name: "Chest Opener"
+      description: "Player who opened the most chests"
+      tier: "stone"
+      stat_path: "minecraft_opened.chest"
+      enabled: true
+    
+    most_furnaces_opened:
+      name: "Furnace Opener"
+      description: "Player who opened the most furnaces"
+      tier: "stone"
+      stat_path: "minecraft_opened.furnace"
+      enabled: true
+    
+    most_crafting_tables_opened:
+      name: "Table Opener"
+      description: "Player who opened the most crafting tables"
+      tier: "stone"
+      stat_path: "minecraft_opened.crafting_table"
+      enabled: true
+    
+    most_anvils_opened:
+      name: "Anvil Opener"
+      description: "Player who opened the most anvils"
+      tier: "iron"
+      stat_path: "minecraft_opened.anvil"
+      enabled: true
+    
+    most_enchanting_tables_opened:
+      name: "Enchanter"
+      description: "Player who opened the most enchanting tables"
+      tier: "iron"
+      stat_path: "minecraft_opened.enchanting_table"
+      enabled: true
+    
+    most_brewing_stands_opened:
+      name: "Brewer"
+      description: "Player who opened the most brewing stands"
+      tier: "iron"
+      stat_path: "minecraft_opened.brewing_stand"
+      enabled: true
+    
+    most_ender_chests_opened:
+      name: "Ender Chest Opener"
+      description: "Player who opened the most ender chests"
+      tier: "diamond"
+      stat_path: "minecraft_opened.ender_chest"
+      enabled: true
+    
+    most_shulker_boxes_opened:
+      name: "Shulker Box Opener"
+      description: "Player who opened the most shulker boxes"
+      tier: "diamond"
+      stat_path: "minecraft_opened.shulker_box"
+      enabled: true
+    
+    # Advancement Awards
+    most_advancements:
+      name: "Achiever"
+      description: "Player who completed the most advancements"
+      tier: "diamond"
+      stat_path: "advancements.completed"
+      enabled: true
+    
+    most_biomes_visited:
+      name: "Explorer"
+      description: "Player who visited the most biomes"
+      tier: "iron"
+      stat_path: "advancements.biomes"
+      enabled: true
+    
+    # Time Awards
+    longest_playtime:
+      name: "Dedication"
+      description: "Player with the longest total playtime"
+      tier: "iron"
+      stat_path: "minecraft_custom.play_time"
+      enabled: true
+    
+    most_sleeps:
+      name: "Sleeper"
+      description: "Player who slept the most"
+      tier: "stone"
+      stat_path: "minecraft_custom.sleep_in_bed"
+      enabled: true
+    
+    most_trades:
+      name: "Trader"
+      description: "Player who traded the most with villagers"
+      tier: "iron"
+      stat_path: "minecraft_custom.talked_to_villager"
+      enabled: true
+
+# Webhook Configuration
+webhooks:
+  enabled: false
+  discord_webhook_url: "https://discord.com/api/webhooks/your-webhook-url"
+  award_announcements: true
+  medal_change_notifications: true
+  milestone_notifications: true

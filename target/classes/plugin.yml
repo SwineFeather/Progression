@@ -10,6 +10,9 @@ commands:
   sqlstats:
     description: Manages player stats syncing
     usage: /<command> <sync|export|view|reload|placeholder|status|versioncheck|cleanup|stop|start|help>
+  awards:
+    description: View player awards and leaderboards
+    usage: /<command> <leaderboard|stats|medals|info|recalculate> [player] [page]
 permissions:
   playerstatstomysql.sqlstats.sync:
     description: Allows syncing stats
@@ -43,4 +46,19 @@ permissions:
     default: op
   playerstatstomysql.sqlstats.help:
     description: Allows viewing command help
+    default: op
+  playerstatstomysql.awards.leaderboard:
+    description: Allows viewing award leaderboards
+    default: true
+  playerstatstomysql.awards.stats:
+    description: Allows viewing player statistics
+    default: true
+  playerstatstomysql.awards.medals:
+    description: Allows viewing player awards
+    default: true
+  playerstatstomysql.awards.info:
+    description: Allows viewing award information
+    default: true
+  playerstatstomysql.awards.recalculate:
+    description: Allows recalculating player awards
     default: op
