@@ -171,7 +171,6 @@ public class SupabaseManager {
             // UPSERT stats data
             JsonObject statsRecord = new JsonObject();
             statsRecord.addProperty("player_uuid", player.getUniqueId().toString());
-            statsRecord.addProperty("player_name", player.getName());
             statsRecord.add("stats", statsData);
             statsRecord.addProperty("last_updated", System.currentTimeMillis());
             
@@ -374,7 +373,6 @@ public class SupabaseManager {
 
             JsonObject statsRecord = new JsonObject();
             statsRecord.addProperty("player_uuid", uuid.toString());
-            statsRecord.addProperty("player_name", name);
             statsRecord.add("stats", statsData);
             statsRecord.addProperty("last_updated", System.currentTimeMillis());
 
@@ -389,7 +387,7 @@ public class SupabaseManager {
     // --- Leaderboard/stat query methods ---
     public String getLeaderboard(String stat, int limit) {
         if (!enabled) return "Supabase not enabled";
-        String url = supabaseUrl + "/rest/v1/player_stats?select=player_uuid,player_name,stats->>" + stat + "&order=stats->>" + stat + ".desc.nullslast&limit=" + limit;
+        String url = supabaseUrl + "/rest/v1/player_stats?select=player_uuid,stats->>" + stat + "&order=stats->>" + stat + ".desc.nullslast&limit=" + limit;
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("apikey", supabaseKey)
