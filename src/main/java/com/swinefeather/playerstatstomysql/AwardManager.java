@@ -114,9 +114,18 @@ public class AwardManager {
     }
     
     public void calculateAllAwards(Map<Player, Map<String, Object>> allPlayerStats) {
-        if (!enabled) return;
+        if (!enabled) {
+            logger.info("Award system is disabled, skipping calculation");
+            return;
+        }
         
         logger.info("Calculating awards for " + allPlayerStats.size() + " players");
+        logger.info("Available awards: " + awards.size());
+        
+        // Debug: Log available awards
+        for (AwardDefinition award : awards.values()) {
+            logger.info("Award: " + award.getId() + " - " + award.getName() + " (enabled: " + award.isEnabled() + ", stat_path: " + award.getStatPath() + ")");
+        }
         
         // Clear previous rankings
         awardRankings.clear();
@@ -124,9 +133,15 @@ public class AwardManager {
         
         // Calculate rankings for each award
         for (AwardDefinition award : awards.values()) {
-            if (!award.isEnabled()) continue;
+            if (!award.isEnabled()) {
+                logger.info("Skipping disabled award: " + award.getId());
+                continue;
+            }
             
+            logger.info("Calculating award: " + award.getId() + " with stat path: " + award.getStatPath());
             List<AwardRanking> rankings = calculateAwardRanking(award, allPlayerStats);
+            logger.info("Found " + rankings.size() + " players for award " + award.getId());
+            
             awardRankings.put(award.getId(), rankings);
             
             // Assign medals and update player awards
@@ -136,15 +151,19 @@ public class AwardManager {
         // Update player total points
         updatePlayerTotalPoints();
         
-        // Sync to Supabase
-        syncAwardsToSupabase(allPlayerStats);
+        logger.info("Award calculation completed. Total players with awards: " + playerAwards.size());
+        
+        // Sync to Supabase (granular)
+        syncAllAwardsToSupabase();
+        syncAllMedalsToSupabase();
+        syncAllPointsToSupabase();
         
         // Send notifications
         if (medalChangeNotifications) {
             sendMedalChangeNotifications();
         }
         
-        // Send webhook notifications
+        // Send webhook notifications for medal changes
         if (webhookManager != null && webhookManager.isEnabled()) {
             sendWebhookNotifications();
         }
@@ -173,25 +192,48 @@ public class AwardManager {
     
     private Long getStatValue(Map<String, Object> stats, String statPath) {
         String[] pathParts = statPath.split("\\.");
-        if (pathParts.length != 2) return null;
+        if (pathParts.length != 2) {
+            logger.warning("Invalid stat path format: " + statPath + " (expected format: category.stat)");
+            return null;
+        }
         
         String category = pathParts[0];
         String statName = pathParts[1];
         
+        logger.info("Looking for stat: " + category + "." + statName);
+        logger.info("Available categories: " + stats.keySet());
+        
         Object categoryData = stats.get(category);
+        if (categoryData == null) {
+            logger.warning("Category not found: " + category);
+            return null;
+        }
+        
         if (categoryData instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> categoryMap = (Map<String, Object>) categoryData;
+            logger.info("Available stats in category " + category + ": " + categoryMap.keySet());
+            
             Object value = categoryMap.get(statName);
+            if (value == null) {
+                logger.warning("Stat not found: " + statName + " in category " + category);
+                return null;
+            }
+            
+            logger.info("Found stat value: " + value + " (type: " + value.getClass().getSimpleName() + ")");
             
             if (value instanceof Long) {
                 return (Long) value;
             } else if (value instanceof Integer) {
                 return ((Integer) value).longValue();
+            } else {
+                logger.warning("Unexpected value type for stat " + statName + ": " + value.getClass().getSimpleName());
+                return null;
             }
+        } else {
+            logger.warning("Category data is not a Map: " + categoryData.getClass().getSimpleName());
+            return null;
         }
-        
-        return null;
     }
     
     private void assignMedals(AwardDefinition award, List<AwardRanking> rankings) {
@@ -214,23 +256,85 @@ public class AwardManager {
         }
     }
     
-    private void syncAwardsToSupabase(Map<Player, Map<String, Object>> allPlayerStats) {
-        if (supabaseManager == null || !supabaseManager.isEnabled()) return;
-        
-        for (Map.Entry<Player, Map<String, Object>> entry : allPlayerStats.entrySet()) {
-            Player player = entry.getKey();
-            Map<String, Object> stats = entry.getValue();
-            PlayerAwards playerAward = playerAwards.get(player.getUniqueId());
-            
-            if (playerAward != null) {
-                // Add awards data to stats
-                Map<String, Object> enhancedStats = new HashMap<>(stats);
-                enhancedStats.put("awards", playerAward.toMap());
-                
-                // Sync to Supabase
-                supabaseManager.syncPlayerStats(player, enhancedStats);
+    public Map<UUID, Map<String, Object>> loadAllPlayerStats() {
+        Map<UUID, Map<String, Object>> allStats = new HashMap<>();
+        for (org.bukkit.World world : plugin.getServer().getWorlds()) {
+            java.io.File statsFolder = new java.io.File(world.getWorldFolder(), "stats");
+            if (!statsFolder.exists() || !statsFolder.isDirectory()) continue;
+            java.io.File[] statFiles = statsFolder.listFiles((dir, name) -> name.endsWith(".json"));
+            if (statFiles == null) continue;
+            for (java.io.File statFile : statFiles) {
+                try {
+                    UUID playerUUID = UUID.fromString(statFile.getName().replace(".json", ""));
+                    Map<String, Object> stats = loadStatsFromFile(playerUUID, statFile);
+                    allStats.put(playerUUID, stats);
+                } catch (Exception ignored) {}
             }
         }
+        return allStats;
+    }
+    
+    @SuppressWarnings("unused")
+    public void syncAllAwardsToSupabase() {
+        if (supabaseManager == null || !supabaseManager.isEnabled()) {
+            logger.warning("SupabaseManager is not available or not enabled, cannot sync awards");
+            return;
+        }
+        logger.info("Syncing all awards to Supabase...");
+        int syncedCount = 0;
+        for (Map.Entry<UUID, PlayerAwards> entry : playerAwards.entrySet()) {
+            UUID uuid = entry.getKey();
+            PlayerAwards playerAward = entry.getValue();
+            String name = playerAward.getPlayerName();
+            logger.info("Syncing awards for player: " + name + " (" + uuid + ") - " + playerAward.getMedals().size() + " medals");
+            for (PlayerMedal medal : playerAward.getMedals()) {
+                AwardDefinition award = awards.get(medal.getAwardId());
+                String awardName = award != null ? award.getName() : medal.getAwardId();
+                supabaseManager.upsertPlayerAward(uuid, name, medal.getAwardId(), awardName, medal.getPoints(), medal.getAwardedAt());
+                syncedCount++;
+            }
+        }
+        logger.info("Synced " + syncedCount + " awards to Supabase");
+    }
+    
+    @SuppressWarnings("unused")
+    public void syncAllMedalsToSupabase() {
+        if (supabaseManager == null || !supabaseManager.isEnabled()) {
+            logger.warning("SupabaseManager is not available or not enabled, cannot sync medals");
+            return;
+        }
+        logger.info("Syncing all medals to Supabase...");
+        int syncedCount = 0;
+        for (Map.Entry<UUID, PlayerAwards> entry : playerAwards.entrySet()) {
+            UUID uuid = entry.getKey();
+            PlayerAwards playerAward = entry.getValue();
+            String name = playerAward.getPlayerName();
+            logger.info("Syncing medals for player: " + name + " (" + uuid + ") - " + playerAward.getMedals().size() + " medals");
+            for (PlayerMedal medal : playerAward.getMedals()) {
+                supabaseManager.upsertPlayerMedal(uuid, name, medal.getAwardId(), medal.getMedalType(), medal.getPoints(), medal.getRank(), medal.getStatValue(), medal.getAwardedAt());
+                syncedCount++;
+            }
+        }
+        logger.info("Synced " + syncedCount + " medals to Supabase");
+    }
+    
+    @SuppressWarnings("unused")
+    public void syncAllPointsToSupabase() {
+        if (supabaseManager == null || !supabaseManager.isEnabled()) {
+            logger.warning("SupabaseManager is not available or not enabled, cannot sync points");
+            return;
+        }
+        logger.info("Syncing all points to Supabase...");
+        int syncedCount = 0;
+        for (Map.Entry<UUID, PlayerAwards> entry : playerAwards.entrySet()) {
+            UUID uuid = entry.getKey();
+            PlayerAwards playerAward = entry.getValue();
+            String name = playerAward.getPlayerName();
+            logger.info("Syncing points for player: " + name + " (" + uuid + ") - " + playerAward.getTotalPoints() + " points");
+            supabaseManager.upsertPlayerPoint(uuid, name, playerAward.getTotalPoints());
+            syncedCount++;
+        }
+        logger.info("Synced " + syncedCount + " player points to Supabase");
     }
     
     private void sendMedalChangeNotifications() {
@@ -537,5 +641,55 @@ public class AwardManager {
         public int getBronzeMedals() { return bronzeMedals; }
         public boolean hasNewMedals() { return hasNewMedals; }
         public int getNewMedalsCount() { return totalMedals; }
+    }
+    
+    // Make this method public for use in loadAllPlayerStats
+    public Map<String, Object> loadStatsFromFile(UUID playerUUID, java.io.File statFile) {
+        Map<String, Object> stats = new HashMap<>();
+        try (java.io.FileReader reader = new java.io.FileReader(statFile)) {
+            org.json.simple.parser.JSONParser parser = new org.json.simple.parser.JSONParser();
+            org.json.simple.JSONObject json = (org.json.simple.JSONObject) parser.parse(reader);
+            org.json.simple.JSONObject statsSection = (org.json.simple.JSONObject) json.get("stats");
+            if (statsSection != null) {
+                for (Object categoryObj : statsSection.keySet()) {
+                    String category = (String) categoryObj;
+                    org.json.simple.JSONObject categoryStats = (org.json.simple.JSONObject) statsSection.get(category);
+                    Map<String, Object> categoryData = new HashMap<>();
+                    for (Object statObj : categoryStats.keySet()) {
+                        String statKey = statObj.toString();
+                        Object valueObj = categoryStats.get(statKey);
+                        String cleanStatKey = statKey.replace("minecraft:", "");
+                        if (valueObj instanceof Long) {
+                            categoryData.put(cleanStatKey, (Long) valueObj);
+                        } else if (valueObj instanceof Integer) {
+                            categoryData.put(cleanStatKey, ((Integer) valueObj).longValue());
+                        } else {
+                            categoryData.put(cleanStatKey, valueObj.toString());
+                        }
+                    }
+                    String cleanCategory = category.replace("minecraft:", "");
+                    stats.put(cleanCategory, categoryData);
+                }
+            }
+            org.json.simple.JSONObject advancementsSection = (org.json.simple.JSONObject) json.get("advancements");
+            if (advancementsSection != null) {
+                Map<String, Object> advancementsData = new HashMap<>();
+                for (Object advancementObj : advancementsSection.keySet()) {
+                    String advancementKey = advancementObj.toString();
+                    Object advancementValue = advancementsSection.get(advancementKey);
+                    String cleanAdvancementKey = advancementKey.replace("minecraft:", "");
+                    if (advancementValue instanceof org.json.simple.JSONObject) {
+                        org.json.simple.JSONObject criteria = (org.json.simple.JSONObject) advancementValue;
+                        if (!criteria.isEmpty()) {
+                            advancementsData.put(cleanAdvancementKey, true);
+                        }
+                    } else if (advancementValue instanceof Boolean) {
+                        advancementsData.put(cleanAdvancementKey, (Boolean) advancementValue);
+                    }
+                }
+                stats.put("advancements", advancementsData);
+            }
+        } catch (Exception ignored) {}
+        return stats;
     }
 } 

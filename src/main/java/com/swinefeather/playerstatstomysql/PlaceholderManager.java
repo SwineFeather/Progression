@@ -42,15 +42,15 @@ public class PlaceholderManager {
             }
             plugin.getConfig().set("placeholderapi.placeholders", placeholders);
             plugin.saveConfig();
-            plugin.getLogger().info("[PlayerStatsToMySQL] Loaded Towny placeholders: " + String.join(", ", TOWNY_PLACEHOLDERS));
+            plugin.getLogger().info("Loaded Towny placeholders: " + String.join(", ", TOWNY_PLACEHOLDERS));
         } else {
-            plugin.getLogger().info("[PlayerStatsToMySQL] Towny placeholders not loaded: Towny plugin " +
+            plugin.getLogger().info("Towny placeholders not loaded: Towny plugin " +
                     (plugin.getServer().getPluginManager().getPlugin("Towny") == null ? "not found" : "disabled in config"));
         }
         if (plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") == null) {
-            plugin.getLogger().warning("[PlayerStatsToMySQL] PlaceholderAPI not found, placeholders disabled");
+            plugin.getLogger().warning("PlaceholderAPI not found, placeholders disabled");
         } else {
-            plugin.getLogger().info("[PlayerStatsToMySQL] Loaded " + placeholders.size() + " placeholders: " + String.join(", ", placeholders));
+            plugin.getLogger().info("Loaded " + placeholders.size() + " placeholders: " + String.join(", ", placeholders));
         }
     }
 
@@ -59,7 +59,7 @@ public class PlaceholderManager {
             placeholders.isEmpty() || 
             !plugin.getServer().getPluginManager().isPluginEnabled(plugin) || 
             plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") == null) {
-            plugin.getLogger().info("[PlayerStatsToMySQL] Skipping placeholders for " + playerUUID + ": PlaceholderAPI disabled or not found");
+            plugin.getLogger().info("Skipping placeholders for " + playerUUID + ": PlaceholderAPI disabled or not found");
             return;
         }
 
@@ -67,38 +67,38 @@ public class PlaceholderManager {
             Class<?> placeholderAPIClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
             OfflinePlayer player = plugin.getServer().getOfflinePlayer(playerUUID);
             String playerName = player.getName() != null ? player.getName() : "Unknown";
-            plugin.getLogger().info("[PlayerStatsToMySQL] Processing placeholders for UUID: " + playerUUID + ", Name: " + playerName);
+            plugin.getLogger().info("Processing placeholders for UUID: " + playerUUID + ", Name: " + playerName);
 
             Map<String, String> placeholderValues = new HashMap<>();
             int failedPlaceholders = 0;
             for (String placeholder : placeholders) {
                 if (placeholderBlacklist.contains(placeholder)) {
-                    plugin.getLogger().info("[PlayerStatsToMySQL] Skipping blacklisted placeholder: " + placeholder);
+                    plugin.getLogger().info("Skipping blacklisted placeholder: " + placeholder);
                     continue;
                 }
                 try {
                     String value = (String) placeholderAPIClass.getMethod("setPlaceholders", OfflinePlayer.class, String.class)
                             .invoke(null, player, "%" + placeholder + "%");
-                    plugin.getLogger().info("[PlayerStatsToMySQL] Raw placeholder value for " + placeholder + ": " + value);
+                    plugin.getLogger().info("Raw placeholder value for " + placeholder + ": " + value);
                     if (value != null && !value.isEmpty() && !value.equalsIgnoreCase("none")) {
                         placeholderValues.put(placeholder, value);
                     } else {
-                        plugin.getLogger().info("[PlayerStatsToMySQL] No valid value for placeholder " + placeholder + " for " + playerUUID);
+                        plugin.getLogger().info("No valid value for placeholder " + placeholder + " for " + playerUUID);
                     }
                 } catch (IllegalAccessException | java.lang.reflect.InvocationTargetException | NoSuchMethodException e) {
                     failedPlaceholders++;
-                    plugin.getLogger().warning("[PlayerStatsToMySQL] Failed to process placeholder " + placeholder + " for " + playerUUID + ": " + e.getMessage());
+                    plugin.getLogger().warning("Failed to process placeholder " + placeholder + " for " + playerUUID + ": " + e.getMessage());
                 }
             }
             if (failedPlaceholders > 0) {
-                plugin.getLogger().warning("[PlayerStatsToMySQL] Skipped " + failedPlaceholders + " failed placeholders for " + playerUUID);
+                plugin.getLogger().warning("Skipped " + failedPlaceholders + " failed placeholders for " + playerUUID);
             }
 
             if (!placeholderValues.isEmpty()) {
                 dbManager.savePlaceholderStats(playerUUID, placeholderValues);
-                plugin.getLogger().info("[PlayerStatsToMySQL] Saved " + placeholderValues.size() + " placeholders for " + playerUUID);
+                plugin.getLogger().info("Saved " + placeholderValues.size() + " placeholders for " + playerUUID);
             } else {
-                plugin.getLogger().info("[PlayerStatsToMySQL] No valid placeholder values for " + playerUUID);
+                plugin.getLogger().info("No valid placeholder values for " + playerUUID);
             }
 
             // Sync Towny data if enabled
@@ -106,7 +106,7 @@ public class PlaceholderManager {
                 syncTownyData(playerUUID, player);
             }
         } catch (ClassNotFoundException e) {
-            plugin.getLogger().warning("[PlayerStatsToMySQL] PlaceholderAPI class not found, skipping placeholders for " + playerUUID);
+            plugin.getLogger().warning("PlaceholderAPI class not found, skipping placeholders for " + playerUUID);
         }
     }
 
@@ -140,7 +140,7 @@ public class PlaceholderManager {
                         double balance = (Double) townClass.getMethod("getAccount").invoke(town);
                         townyStats.put("town_balance", String.valueOf(balance));
                     } catch (Exception e) {
-                        plugin.getLogger().warning("[PlayerStatsToMySQL] Could not get town balance: " + e.getMessage());
+                        plugin.getLogger().warning("Could not get town balance: " + e.getMessage());
                     }
                     
                     // Get nation information
@@ -159,7 +159,7 @@ public class PlaceholderManager {
                             double nationBalance = (Double) nationClass.getMethod("getAccount").invoke(nation);
                             townyStats.put("nation_balance", String.valueOf(nationBalance));
                         } catch (Exception e) {
-                            plugin.getLogger().warning("[PlayerStatsToMySQL] Could not get nation balance: " + e.getMessage());
+                            plugin.getLogger().warning("Could not get nation balance: " + e.getMessage());
                         }
                     } else {
                         townyStats.put("nation", "none");
@@ -174,13 +174,13 @@ public class PlaceholderManager {
                 
                 if (!townyStats.isEmpty()) {
                     dbManager.saveTownyStats(playerUUID, townyStats);
-                    plugin.getLogger().info("[PlayerStatsToMySQL] Saved Towny data for " + playerUUID + ": " + townyStats);
+                    plugin.getLogger().info("Saved Towny data for " + playerUUID + ": " + townyStats);
                 }
             } else {
-                plugin.getLogger().info("[PlayerStatsToMySQL] No Towny resident found for " + playerUUID);
+                plugin.getLogger().info("No Towny resident found for " + playerUUID);
             }
         } catch (Exception e) {
-            plugin.getLogger().warning("[PlayerStatsToMySQL] Failed to sync Towny data for " + playerUUID + ": " + e.getMessage());
+            plugin.getLogger().warning("Failed to sync Towny data for " + playerUUID + ": " + e.getMessage());
         }
     }
 

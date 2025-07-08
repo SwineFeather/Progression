@@ -14,6 +14,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import com.google.gson.Gson;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
+import java.io.StringReader;
 
 public class AwardCommands implements CommandExecutor, TabCompleter {
     private final Main plugin;
@@ -76,19 +80,78 @@ public class AwardCommands implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.RED + "You don't have permission to view leaderboards!");
             return;
         }
-        
         String category = args.length > 1 ? args[1] : "total";
         int page = args.length > 2 ? Math.max(1, Integer.parseInt(args[2])) : 1;
-        
-        CompletableFuture.runAsync(() -> {
-            try {
-                List<LeaderboardEntry> entries = getLeaderboard(category, page);
-                displayLeaderboard(sender, category, page, entries);
-            } catch (Exception e) {
-                sender.sendMessage(ChatColor.RED + "Error loading leaderboard: " + e.getMessage());
-                plugin.getLogger().warning("Error loading leaderboard: " + e.getMessage());
-            }
-        });
+        if (supabaseManager != null && supabaseManager.isEnabled()) {
+            CompletableFuture.runAsync(() -> {
+                String result;
+                if (category.equals("total")) {
+                    // Use player_points table for total points leaderboard
+                    result = supabaseManager.rawGet("/rest/v1/player_points?select=player_uuid,total_points&order=total_points.desc.nullslast&limit=10");
+                } else {
+                    // Use player_stats table for stat-based leaderboard
+                    result = supabaseManager.getLeaderboard(category, 10);
+                }
+                
+                // Parse JSON and display formatted leaderboard
+                try {
+                    // Create a lenient JsonReader to handle malformed JSON
+                    JsonReader reader = new JsonReader(new StringReader(result));
+                    reader.setLenient(true);
+                    com.google.gson.JsonArray arr = JsonParser.parseReader(reader).getAsJsonArray();
+                    sender.sendMessage(ChatColor.GOLD + "=== Supabase Leaderboard for " + category + " ===");
+                    int rank = 1;
+                    for (com.google.gson.JsonElement el : arr) {
+                        com.google.gson.JsonObject obj = el.getAsJsonObject();
+                        String playerUuid = obj.has("player_uuid") ? obj.get("player_uuid").getAsString() : "?";
+                        String name = "Unknown";
+                        
+                        // Get player name from UUID
+                        if (!playerUuid.equals("?")) {
+                            try {
+                                UUID uuid = UUID.fromString(playerUuid);
+                                org.bukkit.OfflinePlayer offline = Bukkit.getOfflinePlayer(uuid);
+                                name = offline.getName() != null ? offline.getName() : playerUuid.substring(0, 8);
+                            } catch (Exception e) {
+                                name = playerUuid.substring(0, 8);
+                            }
+                        }
+                        
+                        double points = 0;
+                        if (category.equals("total")) {
+                            points = obj.has("total_points") ? obj.get("total_points").getAsDouble() : 0.0;
+                        } else {
+                            // For stat-based leaderboards, the value is in the stats JSON
+                            String statValue = obj.has(category) ? obj.get(category).getAsString() : "0";
+                            try {
+                                points = Double.parseDouble(statValue);
+                            } catch (NumberFormatException e) {
+                                points = 0.0;
+                            }
+                        }
+                        
+                        sender.sendMessage(ChatColor.YELLOW + "#" + rank + ChatColor.WHITE + ": " + ChatColor.AQUA + name + ChatColor.GRAY + " | " + ChatColor.GREEN + String.format("%.1f", points) + " pts");
+                        rank++;
+                    }
+                    if (arr.size() == 0) {
+                        sender.sendMessage(ChatColor.RED + "No leaderboard data found in Supabase.");
+                    }
+                } catch (Exception e) {
+                    sender.sendMessage(ChatColor.RED + "Error parsing Supabase leaderboard: " + e.getMessage());
+                    plugin.getLogger().warning("Raw Supabase response: " + result);
+                }
+            });
+        } else {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    List<LeaderboardEntry> entries = getLeaderboard(category, page);
+                    displayLeaderboard(sender, category, page, entries);
+                } catch (Exception e) {
+                    sender.sendMessage(ChatColor.RED + "Error loading leaderboard: " + e.getMessage());
+                    plugin.getLogger().warning("Error loading leaderboard: " + e.getMessage());
+                }
+            });
+        }
     }
 
     private void handlePlayerStats(CommandSender sender, String[] args) {
@@ -96,47 +159,97 @@ public class AwardCommands implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.RED + "You don't have permission to view player statistics!");
             return;
         }
-        
         if (args.length < 2) {
             sender.sendMessage(ChatColor.RED + "Usage: /awards stats <player>");
             return;
         }
-
         String playerName = args[1];
-        
-        // Try to get player from online players first
         Player player = Bukkit.getPlayer(playerName);
         if (player != null) {
-            // Player is online, we can get their stats
             sender.sendMessage(ChatColor.GREEN + "Getting stats for online player: " + playerName);
-            // For now, just show basic info since we don't have the full stats display implemented
-            sender.sendMessage(ChatColor.GOLD + "=== " + playerName + "'s Basic Info ===");
-            sender.sendMessage(ChatColor.GRAY + "UUID: " + ChatColor.WHITE + player.getUniqueId());
-            sender.sendMessage(ChatColor.GRAY + "Health: " + ChatColor.WHITE + player.getHealth() + "/" + player.getMaxHealth());
-            sender.sendMessage(ChatColor.GRAY + "Level: " + ChatColor.WHITE + player.getLevel());
-            sender.sendMessage(ChatColor.GRAY + "Location: " + ChatColor.WHITE + 
-                             player.getLocation().getWorld().getName() + " " +
-                             player.getLocation().getBlockX() + ", " +
-                             player.getLocation().getBlockY() + ", " +
-                             player.getLocation().getBlockZ());
+            // Show in-memory stats from AwardManager
+            awardManager.showPlayerAwards(sender, playerName);
             return;
         }
-        
-        // Player is offline, try to get from database
-        CompletableFuture.runAsync(() -> {
-            try {
-                PlayerStats stats = getPlayerStats(playerName);
-                if (stats != null) {
-                    displayPlayerStats(sender, playerName, stats);
-                } else {
-                    sender.sendMessage(ChatColor.RED + "Player not found: " + playerName);
-                    sender.sendMessage(ChatColor.YELLOW + "Note: Player must be online to view detailed stats, or data must exist in database.");
+        // Player is offline, try to get from Supabase if enabled
+        if (supabaseManager != null && supabaseManager.isEnabled()) {
+            CompletableFuture.runAsync(() -> {
+                UUID uuid = null;
+                try {
+                    uuid = UUID.fromString(playerName);
+                } catch (Exception ignored) {
+                    org.bukkit.OfflinePlayer offline = Bukkit.getOfflinePlayer(playerName);
+                    if (offline != null) uuid = offline.getUniqueId();
                 }
-            } catch (Exception e) {
-                sender.sendMessage(ChatColor.RED + "Error loading player stats: " + e.getMessage());
-                plugin.getLogger().warning("Error loading player stats: " + e.getMessage());
-            }
-        });
+                if (uuid == null) {
+                    sender.sendMessage(ChatColor.RED + "Player not found: " + playerName);
+                    return;
+                }
+                
+                // Get points from player_points table
+                String pointsResult = supabaseManager.rawGet("/rest/v1/player_points?player_uuid=eq." + uuid + "&select=*");
+                // Get medals from player_medals table
+                String medalsResult = supabaseManager.rawGet("/rest/v1/player_medals?player_uuid=eq." + uuid + "&select=*");
+                
+                try {
+                    // Parse points data
+                    JsonReader pointsReader = new JsonReader(new StringReader(pointsResult));
+                    pointsReader.setLenient(true);
+                    com.google.gson.JsonArray pointsArr = JsonParser.parseReader(pointsReader).getAsJsonArray();
+                    
+                    // Parse medals data
+                    JsonReader medalsReader = new JsonReader(new StringReader(medalsResult));
+                    medalsReader.setLenient(true);
+                    com.google.gson.JsonArray medalsArr = JsonParser.parseReader(medalsReader).getAsJsonArray();
+                    
+                    double points = 0.0;
+                    int gold = 0, silver = 0, bronze = 0;
+                    
+                    if (pointsArr.size() > 0) {
+                        com.google.gson.JsonObject pointsObj = pointsArr.get(0).getAsJsonObject();
+                        points = pointsObj.has("total_points") ? pointsObj.get("total_points").getAsDouble() : 0.0;
+                    }
+                    
+                    if (medalsArr.size() > 0) {
+                        com.google.gson.JsonObject medalsObj = medalsArr.get(0).getAsJsonObject();
+                        gold = medalsObj.has("gold_count") ? medalsObj.get("gold_count").getAsInt() : 0;
+                        silver = medalsObj.has("silver_count") ? medalsObj.get("silver_count").getAsInt() : 0;
+                        bronze = medalsObj.has("bronze_count") ? medalsObj.get("bronze_count").getAsInt() : 0;
+                    }
+                    
+                    if (points == 0.0 && gold == 0 && silver == 0 && bronze == 0) {
+                        sender.sendMessage(ChatColor.RED + "No stats found for " + playerName + ".");
+                        return;
+                    }
+                    
+                    sender.sendMessage(ChatColor.GOLD + "=== Supabase Stats for " + playerName + " ===");
+                    sender.sendMessage(ChatColor.GREEN + "Points: " + String.format("%.1f", points));
+                    sender.sendMessage(ChatColor.GOLD + "Gold Medals: " + gold);
+                    sender.sendMessage(ChatColor.GRAY + "Silver Medals: " + silver);
+                    sender.sendMessage(ChatColor.YELLOW + "Bronze Medals: " + bronze);
+                    
+                } catch (Exception e) {
+                    sender.sendMessage(ChatColor.RED + "Error parsing Supabase stats: " + e.getMessage());
+                    plugin.getLogger().warning("Raw Supabase points response: " + pointsResult);
+                    plugin.getLogger().warning("Raw Supabase medals response: " + medalsResult);
+                }
+            });
+        } else {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    PlayerStats stats = getPlayerStats(playerName);
+                    if (stats != null) {
+                        displayPlayerStats(sender, playerName, stats);
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "Player not found: " + playerName);
+                        sender.sendMessage(ChatColor.YELLOW + "Note: Player must be online to view detailed stats, or data must exist in database.");
+                    }
+                } catch (Exception e) {
+                    sender.sendMessage(ChatColor.RED + "Error loading player stats: " + e.getMessage());
+                    plugin.getLogger().warning("Error loading player stats: " + e.getMessage());
+                }
+            });
+        }
     }
 
     private void handlePlayerAwards(CommandSender sender, String[] args) {
@@ -151,31 +264,72 @@ public class AwardCommands implements CommandExecutor, TabCompleter {
         }
 
         String playerName = args[1];
-        
-        // Try to get player from online players first
         Player player = Bukkit.getPlayer(playerName);
         if (player != null) {
-            // Player is online, we can get their awards from AwardManager
             sender.sendMessage(ChatColor.GREEN + "Getting awards for online player: " + playerName);
+            // Show in-memory awards from AwardManager
             awardManager.showPlayerAwards(sender, playerName);
             return;
         }
         
-        // Player is offline, try to get from database
-        CompletableFuture.runAsync(() -> {
-            try {
-                PlayerAwards awards = getPlayerAwards(playerName);
-                if (awards != null) {
-                    displayPlayerAwards(sender, playerName, awards);
-                } else {
-                    sender.sendMessage(ChatColor.RED + "Player not found: " + playerName);
-                    sender.sendMessage(ChatColor.YELLOW + "Note: Player must be online to view awards, or awards must exist in database.");
+        // Player is offline, try to get from Supabase if enabled
+        if (supabaseManager != null && supabaseManager.isEnabled()) {
+            CompletableFuture.runAsync(() -> {
+                UUID uuid = null;
+                try {
+                    uuid = UUID.fromString(playerName);
+                } catch (Exception ignored) {
+                    org.bukkit.OfflinePlayer offline = Bukkit.getOfflinePlayer(playerName);
+                    if (offline != null) uuid = offline.getUniqueId();
                 }
-            } catch (Exception e) {
-                sender.sendMessage(ChatColor.RED + "Error loading player awards: " + e.getMessage());
-                plugin.getLogger().warning("Error loading player awards: " + e.getMessage());
-            }
-        });
+                if (uuid == null) {
+                    sender.sendMessage(ChatColor.RED + "Player not found: " + playerName);
+                    return;
+                }
+                
+                // Get player awards from Supabase
+                String result = supabaseManager.rawGet("/rest/v1/player_awards?player_uuid=eq." + uuid + "&select=*&order=achieved_at.desc");
+                try {
+                    // Create a lenient JsonReader to handle malformed JSON
+                    JsonReader reader = new JsonReader(new StringReader(result));
+                    reader.setLenient(true);
+                    com.google.gson.JsonArray arr = JsonParser.parseReader(reader).getAsJsonArray();
+                    if (arr.size() == 0) {
+                        sender.sendMessage(ChatColor.RED + "No awards found for " + playerName + ".");
+                        return;
+                    }
+                    
+                    sender.sendMessage(ChatColor.GOLD + "=== Supabase Awards for " + playerName + " ===");
+                    for (com.google.gson.JsonElement el : arr) {
+                        com.google.gson.JsonObject obj = el.getAsJsonObject();
+                        String awardName = obj.has("award_name") ? obj.get("award_name").getAsString() : "Unknown";
+                        String medal = obj.has("medal") ? obj.get("medal").getAsString() : "Unknown";
+                        double points = obj.has("points") ? obj.get("points").getAsDouble() : 0.0;
+                        String medalColor = medal.equals("gold") ? "§6" : medal.equals("silver") ? "§7" : "§c";
+                        
+                        sender.sendMessage(ChatColor.AQUA + awardName + ChatColor.GRAY + " - " + medalColor + medal.toUpperCase() + ChatColor.GRAY + " - " + ChatColor.GREEN + String.format("%.1f", points) + " points");
+                    }
+                } catch (Exception e) {
+                    sender.sendMessage(ChatColor.RED + "Error parsing Supabase awards: " + e.getMessage());
+                    plugin.getLogger().warning("Raw Supabase response: " + result);
+                }
+            });
+        } else {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    PlayerAwards awards = getPlayerAwards(playerName);
+                    if (awards != null) {
+                        displayPlayerAwards(sender, playerName, awards);
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "No awards found for " + playerName + ".");
+                        sender.sendMessage(ChatColor.YELLOW + "Note: Player must be online to view awards, or data must exist in database.");
+                    }
+                } catch (Exception e) {
+                    sender.sendMessage(ChatColor.RED + "Error loading player awards: " + e.getMessage());
+                    plugin.getLogger().warning("Error loading player awards: " + e.getMessage());
+                }
+            });
+        }
     }
 
     private void handleRecalculate(CommandSender sender, String[] args) {

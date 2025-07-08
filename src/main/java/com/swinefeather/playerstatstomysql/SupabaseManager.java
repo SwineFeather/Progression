@@ -20,6 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.google.gson.stream.JsonReader;
+import java.io.StringReader;
 
 public class SupabaseManager {
     private final Plugin plugin;
@@ -140,7 +142,7 @@ public class SupabaseManager {
             try {
                 performPlayerSync(player, stats);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "[PlayerStatsToMySQL] Error syncing player stats for " + player.getName(), e);
+                logger.log(Level.SEVERE, "Error syncing player stats for " + player.getName(), e);
             }
         });
         
@@ -169,15 +171,16 @@ public class SupabaseManager {
             // UPSERT stats data
             JsonObject statsRecord = new JsonObject();
             statsRecord.addProperty("player_uuid", player.getUniqueId().toString());
+            statsRecord.addProperty("player_name", player.getName());
             statsRecord.add("stats", statsData);
             statsRecord.addProperty("last_updated", System.currentTimeMillis());
             
             upsertStatsData(statsRecord);
             
-            logger.info("[PlayerStatsToMySQL] Successfully synced stats for player: " + player.getName() + " (" + player.getUniqueId() + ")");
+            logger.info("Successfully synced stats for player: " + player.getName() + " (" + player.getUniqueId() + ")");
             
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "[PlayerStatsToMySQL] Failed to sync player stats for " + player.getName() + " (" + player.getUniqueId() + ")", e);
+            logger.log(Level.SEVERE, "Failed to sync player stats for " + player.getName() + " (" + player.getUniqueId() + ")", e);
         }
     }
     
@@ -212,8 +215,8 @@ public class SupabaseManager {
                 throw new IOException("Failed to upsert player data: " + response.code() + " " + response.message() + " - Response: " + responseBody);
             }
         } catch (Exception e) {
-            logger.severe("[PlayerStatsToMySQL] ERROR: Exception occurred while connecting to: " + url);
-            logger.severe("[PlayerStatsToMySQL] ERROR: Exception message: " + e.getMessage());
+            logger.severe("ERROR: Exception occurred while connecting to: " + url);
+            logger.severe("ERROR: Exception message: " + e.getMessage());
             throw e;
         }
     }
@@ -249,8 +252,8 @@ public class SupabaseManager {
                 throw new IOException("Failed to upsert stats data: " + response.code() + " " + response.message() + " - Response: " + responseBody);
             }
         } catch (Exception e) {
-            logger.severe("[PlayerStatsToMySQL] ERROR: Exception occurred while connecting to: " + url);
-            logger.severe("[PlayerStatsToMySQL] ERROR: Exception message: " + e.getMessage());
+            logger.severe("ERROR: Exception occurred while connecting to: " + url);
+            logger.severe("ERROR: Exception message: " + e.getMessage());
             throw e;
         }
     }
@@ -274,7 +277,7 @@ public class SupabaseManager {
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                logger.warning("[PlayerStatsToMySQL] Supabase queue processing interrupted");
+                logger.warning("Supabase queue processing interrupted");
             } finally {
                 isProcessing = false;
             }
@@ -306,7 +309,7 @@ public class SupabaseManager {
                         syncPlayerStats(player, stats);
                     }
                 }
-                logger.info("[PlayerStatsToMySQL] Completed batch " + batchNum + " of " + ((playerList.size() - 1) / batchSize + 1));
+                logger.info("Completed batch " + batchNum + " of " + ((playerList.size() - 1) / batchSize + 1));
             }, (i / batchSize) * (batchDelayMs / 50)); // Convert ms to ticks
         }
     }
@@ -314,7 +317,7 @@ public class SupabaseManager {
     public void onPlayerQuit(Player player, Map<String, Object> stats) {
         if (!enabled || !syncOnPlayerQuit) return;
         
-        logger.info("[PlayerStatsToMySQL] Syncing final stats for player: " + player.getName());
+        logger.info("Syncing final stats for player: " + player.getName());
         syncPlayerStats(player, stats);
     }
     
@@ -346,7 +349,7 @@ public class SupabaseManager {
             try {
                 performPlayerSync(uuid, name, stats);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "[PlayerStatsToMySQL] Error syncing player stats for " + name + " (" + uuid + ")", e);
+                logger.log(Level.SEVERE, "Error syncing player stats for " + name + " (" + uuid + ")", e);
             }
         });
         processQueue();
@@ -371,14 +374,250 @@ public class SupabaseManager {
 
             JsonObject statsRecord = new JsonObject();
             statsRecord.addProperty("player_uuid", uuid.toString());
+            statsRecord.addProperty("player_name", name);
             statsRecord.add("stats", statsData);
             statsRecord.addProperty("last_updated", System.currentTimeMillis());
 
             upsertStatsData(statsRecord);
 
-            logger.info("[PlayerStatsToMySQL] Successfully synced stats for player: " + name + " (" + uuid + ")");
+            logger.info("Successfully synced stats for player: " + name + " (" + uuid + ")");
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "[PlayerStatsToMySQL] Failed to sync player stats for " + name + " (" + uuid + ")", e);
+            logger.log(Level.SEVERE, "Failed to sync player stats for " + name + " (" + uuid + ")", e);
+        }
+    }
+
+    // --- Leaderboard/stat query methods ---
+    public String getLeaderboard(String stat, int limit) {
+        if (!enabled) return "Supabase not enabled";
+        String url = supabaseUrl + "/rest/v1/player_stats?select=player_uuid,player_name,stats->>" + stat + "&order=stats->>" + stat + ".desc.nullslast&limit=" + limit;
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("apikey", supabaseKey)
+                .addHeader("Authorization", "Bearer " + supabaseKey)
+                .build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                return "Failed to fetch leaderboard: " + response.code() + " " + response.message();
+            }
+            return response.body() != null ? response.body().string() : "No data";
+        } catch (Exception e) {
+            return "Error fetching leaderboard: " + e.getMessage();
+        }
+    }
+    public String getPlayerStats(UUID uuid) {
+        if (!enabled) return "Supabase not enabled";
+        String url = supabaseUrl + "/rest/v1/player_stats?player_uuid=eq." + uuid + "&select=*";
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("apikey", supabaseKey)
+                .addHeader("Authorization", "Bearer " + supabaseKey)
+                .build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                return "Failed to fetch player stats: " + response.code() + " " + response.message();
+            }
+            return response.body() != null ? response.body().string() : "No data";
+        } catch (Exception e) {
+            return "Error fetching player stats: " + e.getMessage();
+        }
+    }
+    public String getAwardLeaderboard(String awardId, int limit) {
+        if (!enabled) return "Supabase not enabled";
+        String url = supabaseUrl + "/rest/v1/player_awards?award_id=eq." + awardId + "&order=points.desc.nullslast&limit=" + limit;
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("apikey", supabaseKey)
+                .addHeader("Authorization", "Bearer " + supabaseKey)
+                .build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                return "Failed to fetch award leaderboard: " + response.code() + " " + response.message();
+            }
+            return response.body() != null ? response.body().string() : "No data";
+        } catch (Exception e) {
+            return "Error fetching award leaderboard: " + e.getMessage();
+        }
+    }
+
+    // --- New upsert methods for awards, medals, and points ---
+    public void upsertPlayerAward(UUID uuid, String name, String awardId, String awardName, double points, long awardedAt) {
+        if (!enabled) return;
+        try {
+            // Determine tier and medal from awardId and points
+            String tier = "stone"; // default
+            String medal = "bronze"; // default
+            
+            // This is a simplified logic - in practice, the AwardManager should pass these values
+            if (points >= 6.0) {
+                tier = "diamond";
+                medal = "gold";
+            } else if (points >= 4.0) {
+                tier = "diamond";
+                medal = "silver";
+            } else if (points >= 3.0) {
+                tier = "diamond";
+                medal = "bronze";
+            } else if (points >= 2.0) {
+                tier = "iron";
+                medal = "gold";
+            } else if (points >= 1.0) {
+                tier = "iron";
+                medal = "silver";
+            } else if (points >= 0.5) {
+                tier = "stone";
+                medal = "gold";
+            }
+            
+            JsonObject awardData = new JsonObject();
+            awardData.addProperty("player_uuid", uuid.toString());
+            awardData.addProperty("award_id", awardId);
+            awardData.addProperty("award_name", awardName);
+            awardData.addProperty("tier", tier);
+            awardData.addProperty("medal", medal);
+            awardData.addProperty("points", points);
+            awardData.addProperty("achieved_at", new java.sql.Timestamp(awardedAt).toString());
+            String url = supabaseUrl + "/rest/v1/player_awards";
+            RequestBody body = RequestBody.create(MediaType.parse("application/json"), awardData.toString());
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Prefer", "resolution=merge-duplicates")
+                    .post(body)
+                    .build();
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to upsert player_awards: " + response.code() + " " + response.message());
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error upserting player_awards for " + name, e);
+        }
+    }
+
+    public void upsertPlayerMedal(UUID uuid, String name, String awardId, String medalType, double points, int rank, long statValue, long awardedAt) {
+        if (!enabled) return;
+        try {
+            // First, get current medal counts
+            String getUrl = supabaseUrl + "/rest/v1/player_medals?player_uuid=eq." + uuid;
+            Request getRequest = new Request.Builder()
+                    .url(getUrl)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            int bronzeCount = 0, silverCount = 0, goldCount = 0, totalMedals = 0;
+            
+            try (Response getResponse = httpClient.newCall(getRequest).execute()) {
+                if (getResponse.isSuccessful() && getResponse.body() != null) {
+                    String responseBody = getResponse.body().string();
+                    if (!responseBody.equals("[]")) {
+                        // Parse existing counts
+                        JsonReader reader = new JsonReader(new StringReader(responseBody));
+                        reader.setLenient(true);
+                        com.google.gson.JsonArray arr = JsonParser.parseReader(reader).getAsJsonArray();
+                        if (arr.size() > 0) {
+                            com.google.gson.JsonObject existing = arr.get(0).getAsJsonObject();
+                            bronzeCount = existing.has("bronze_count") ? existing.get("bronze_count").getAsInt() : 0;
+                            silverCount = existing.has("silver_count") ? existing.get("silver_count").getAsInt() : 0;
+                            goldCount = existing.has("gold_count") ? existing.get("gold_count").getAsInt() : 0;
+                            totalMedals = existing.has("total_medals") ? existing.get("total_medals").getAsInt() : 0;
+                        }
+                    }
+                }
+            }
+            
+            // Update counts based on medal type
+            switch (medalType.toLowerCase()) {
+                case "bronze":
+                    bronzeCount++;
+                    break;
+                case "silver":
+                    silverCount++;
+                    break;
+                case "gold":
+                    goldCount++;
+                    break;
+            }
+            totalMedals++;
+            
+            // Upsert updated medal counts
+            JsonObject medalData = new JsonObject();
+            medalData.addProperty("player_uuid", uuid.toString());
+            medalData.addProperty("bronze_count", bronzeCount);
+            medalData.addProperty("silver_count", silverCount);
+            medalData.addProperty("gold_count", goldCount);
+            medalData.addProperty("total_medals", totalMedals);
+            medalData.addProperty("last_updated", new java.sql.Timestamp(System.currentTimeMillis()).toString());
+            
+            String url = supabaseUrl + "/rest/v1/player_medals";
+            RequestBody body = RequestBody.create(MediaType.parse("application/json"), medalData.toString());
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Prefer", "resolution=merge-duplicates")
+                    .post(body)
+                    .build();
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to upsert player_medals: " + response.code() + " " + response.message());
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error upserting player_medals for " + name, e);
+        }
+    }
+
+    public void upsertPlayerPoint(UUID uuid, String name, double totalPoints) {
+        if (!enabled) return;
+        try {
+            JsonObject pointData = new JsonObject();
+            pointData.addProperty("player_uuid", uuid.toString());
+            pointData.addProperty("total_points", totalPoints);
+            pointData.addProperty("last_updated", new java.sql.Timestamp(System.currentTimeMillis()).toString());
+            String url = supabaseUrl + "/rest/v1/player_points";
+            RequestBody body = RequestBody.create(MediaType.parse("application/json"), pointData.toString());
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Prefer", "resolution=merge-duplicates")
+                    .post(body)
+                    .build();
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to upsert player_points: " + response.code() + " " + response.message());
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error upserting player_points for " + name, e);
+        }
+    }
+
+    // Utility method to perform a raw GET request to Supabase REST API
+    public String rawGet(String urlPath) {
+        if (!enabled) return "[]";
+        try {
+            String url = supabaseUrl + urlPath;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed raw GET: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error in rawGet for Supabase: " + urlPath, e);
+            return "[]";
         }
     }
 } 

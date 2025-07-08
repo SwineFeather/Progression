@@ -42,31 +42,31 @@ public class StatSyncTask {
 
         try {
             for (World world : plugin.getServer().getWorlds()) {
-                plugin.getLogger().info(String.format("[PlayerStatsToMySQL] Checking world: %s", world.getName()));
+                plugin.getLogger().info("Checking world: " + world.getName());
                 File statsFolder = new File(world.getWorldFolder(), "stats");
                 if (!statsFolder.exists() || !statsFolder.isDirectory()) {
-                    plugin.getLogger().warning(String.format("[PlayerStatsToMySQL] Stats folder not found in world: %s", world.getName()));
+                    plugin.getLogger().warning("Stats folder not found in world: " + world.getName());
                     continue;
                 }
 
                 File[] statFiles = statsFolder.listFiles((dir, name) -> name.endsWith(".json"));
                 if (statFiles == null) {
-                    plugin.getLogger().warning(String.format("[PlayerStatsToMySQL] No stat files found in: %s", statsFolder.getPath()));
+                    plugin.getLogger().warning("No stat files found in: " + statsFolder.getPath());
                     continue;
                 }
 
                 for (File statFile : statFiles) {
                     try {
                         UUID playerUUID = UUID.fromString(statFile.getName().replace(".json", ""));
-                        plugin.getLogger().info(String.format("[PlayerStatsToMySQL] Processing stat file for UUID: %s", playerUUID));
+                        plugin.getLogger().info("Processing stat file for UUID: " + playerUUID);
                         if (!hasMinimumPlaytime(statFile)) {
-                            plugin.getLogger().info(String.format("[PlayerStatsToMySQL] Skipping %s: Playtime below %d ticks", playerUUID, minimumPlaytimeTicks));
+                            plugin.getLogger().info("Skipping " + playerUUID + ": Playtime below " + minimumPlaytimeTicks + " ticks");
                             continue;
                         }
                         String playerName = plugin.getServer().getOfflinePlayer(playerUUID).getName();
                         if (playerName == null) {
                             playerName = "Unknown_" + playerUUID.toString().substring(0, 8);
-                            plugin.getLogger().warning(String.format("[PlayerStatsToMySQL] Player name not found for UUID: %s, using: %s", playerUUID, playerName));
+                            plugin.getLogger().warning("Player name not found for UUID: " + playerUUID + ", using: " + playerName);
                         }
                         
                         // Save to MySQL if available
@@ -85,21 +85,21 @@ public class StatSyncTask {
                             placeholderManager.syncPlayerPlaceholders(playerUUID);
                         }
                     } catch (IllegalArgumentException e) {
-                        plugin.getLogger().warning(String.format("[PlayerStatsToMySQL] Invalid UUID in file: %s", statFile.getName()));
+                        plugin.getLogger().warning("Invalid UUID in file: " + statFile.getName());
                     } catch (Exception e) {
-                        plugin.getLogger().warning(String.format("[PlayerStatsToMySQL] Error processing stat file %s: %s", statFile.getName(), e.getMessage()));
+                        plugin.getLogger().warning("Error processing stat file " + statFile.getName() + ": " + e.getMessage());
                     }
                 }
             }
             if (sender != null) {
                 sender.sendMessage("§aFull stat sync completed!");
             }
-            plugin.getLogger().info("[PlayerStatsToMySQL] Full stat sync finished successfully.");
+            plugin.getLogger().info("Full stat sync finished successfully.");
         } catch (Exception e) {
             if (sender != null) {
-                sender.sendMessage(String.format("§cStat sync failed: %s", e.getMessage()));
+                sender.sendMessage("§cStat sync failed: " + e.getMessage());
             }
-            plugin.getLogger().severe(String.format("[PlayerStatsToMySQL] Full stat sync failed: %s", e.getMessage()));
+            plugin.getLogger().severe("Full stat sync failed: " + e.getMessage());
         }
     }
 
@@ -116,7 +116,7 @@ public class StatSyncTask {
             
             for (Player player : plugin.getServer().getOnlinePlayers()) {
                 UUID playerUUID = player.getUniqueId();
-                plugin.getLogger().info(String.format("Syncing stats for online player: %s", playerUUID));
+                plugin.getLogger().info("Syncing stats for online player: " + playerUUID);
                 
                 // Collect stats for both MySQL and Supabase
                 Map<String, Object> stats = collectPlayerStatsFromWorlds(playerUUID);
@@ -151,9 +151,9 @@ public class StatSyncTask {
             plugin.getLogger().info("Online player stat sync finished successfully.");
         } catch (Exception e) {
             if (sender != null) {
-                sender.sendMessage(String.format("§cOnline player stat sync failed: %s", e.getMessage()));
+                sender.sendMessage("§cOnline player stat sync failed: " + e.getMessage());
             }
-            plugin.getLogger().severe(String.format("Online player stat sync failed: %s", e.getMessage()));
+            plugin.getLogger().severe("Online player stat sync failed: " + e.getMessage());
         }
     }
 
@@ -169,19 +169,19 @@ public class StatSyncTask {
             for (World world : plugin.getServer().getWorlds()) {
                 File statFile = new File(world.getWorldFolder(), "stats/" + playerUUID + ".json");
                 if (!statFile.exists()) {
-                    plugin.getLogger().info(String.format("No stat file found for %s in world: %s", playerUUID, world.getName()));
+                    plugin.getLogger().info("No stat file found for " + playerUUID + " in world: " + world.getName());
                     continue;
                 }
 
                 if (!hasMinimumPlaytime(statFile)) {
-                    plugin.getLogger().info(String.format("Skipping %s: Playtime below %d ticks", playerUUID, minimumPlaytimeTicks));
+                    plugin.getLogger().info("Skipping " + playerUUID + ": Playtime below " + minimumPlaytimeTicks + " ticks");
                     continue;
                 }
 
                 String playerName = plugin.getServer().getOfflinePlayer(playerUUID).getName();
                 if (playerName == null) {
                     playerName = "Unknown_" + playerUUID.toString().substring(0, 8);
-                    plugin.getLogger().warning(String.format("Player name not found for UUID: %s, using: %s", playerUUID, playerName));
+                    plugin.getLogger().warning("Player name not found for UUID: " + playerUUID + ", using: " + playerName);
                 }
                 
                 // Save to MySQL if available
@@ -204,14 +204,14 @@ public class StatSyncTask {
                 }
             }
             if (sender != null) {
-                sender.sendMessage(String.format("§aStat sync for player %s completed!", playerUUID));
+                sender.sendMessage("§aStat sync for player " + playerUUID + " completed!");
             }
-            plugin.getLogger().info(String.format("Stat sync for player %s finished successfully.", playerUUID));
+            plugin.getLogger().info("Stat sync for player " + playerUUID + " finished successfully.");
         } catch (Exception e) {
             if (sender != null) {
-                sender.sendMessage(String.format("§cStat sync for player %s failed: %s", playerUUID, e.getMessage()));
+                sender.sendMessage("§cStat sync for player " + playerUUID + " failed: " + e.getMessage());
             }
-            plugin.getLogger().severe(String.format("Stat sync for player %s failed: %s", playerUUID, e.getMessage()));
+            plugin.getLogger().severe("Stat sync for player " + playerUUID + " failed: " + e.getMessage());
         }
     }
     
@@ -220,6 +220,15 @@ public class StatSyncTask {
             UUID playerUUID = player.getUniqueId();
             Map<String, Object> stats = collectPlayerStatsFromWorlds(playerUUID);
             supabaseManager.onPlayerQuit(player, stats);
+        }
+        // Also sync awards, medals, and points if AwardManager is available
+        if (plugin instanceof Main) {
+            Main main = (Main) plugin;
+            if (main.awardManager != null && main.awardManager.isEnabled()) {
+                main.awardManager.syncAllAwardsToSupabase();
+                main.awardManager.syncAllMedalsToSupabase();
+                main.awardManager.syncAllPointsToSupabase();
+            }
         }
     }
     
@@ -292,7 +301,7 @@ public class StatSyncTask {
             }
             
         } catch (Exception e) {
-            plugin.getLogger().warning(String.format("Failed to collect stats from %s: %s", statFile.getName(), e.getMessage()));
+            plugin.getLogger().warning("Failed to collect stats from " + statFile.getName() + ": " + e.getMessage());
         }
         return stats;
     }
@@ -307,15 +316,15 @@ public class StatSyncTask {
                 if (customStats != null) {
                     Long playTime = (Long) customStats.get("minecraft:play_time");
                     if (playTime != null) {
-                        plugin.getLogger().info(String.format("Playtime for %s: %d ticks", statFile.getName(), playTime));
+                        plugin.getLogger().info("Playtime for " + statFile.getName() + ": " + playTime + " ticks");
                         return playTime >= minimumPlaytimeTicks;
                     }
                 }
             }
-            plugin.getLogger().info(String.format("No playtime data for %s, including anyway", statFile.getName()));
+            plugin.getLogger().info("No playtime data for " + statFile.getName() + ", including anyway");
             return true;
         } catch (Exception e) {
-            plugin.getLogger().warning(String.format("Failed to read playtime from %s: %s", statFile.getName(), e.getMessage()));
+            plugin.getLogger().warning("Failed to read playtime from " + statFile.getName() + ": " + e.getMessage());
             return true;
         }
     }
@@ -356,7 +365,7 @@ public class StatSyncTask {
                 plugin.getLogger().info("Supabase sync will handle placeholder stats");
             }
         } catch (Exception e) {
-            plugin.getLogger().severe(String.format("Failed to sync player stats for %s: %s", playerUUID, e.getMessage()));
+            plugin.getLogger().severe("Failed to sync player stats for " + playerUUID + ": " + e.getMessage());
         }
     }
 

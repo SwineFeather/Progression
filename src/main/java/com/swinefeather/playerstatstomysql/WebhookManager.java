@@ -38,7 +38,7 @@ public class WebhookManager {
     
     public boolean initialize(ConfigurationSection config) {
         if (config == null || !config.getBoolean("enabled", false)) {
-            logger.info("[PlayerStatsToMySQL] Webhook notifications are disabled");
+            logger.info("Webhook notifications are disabled");
             return false;
         }
         
@@ -49,12 +49,12 @@ public class WebhookManager {
         this.milestoneNotifications = config.getBoolean("milestone_notifications", true);
         
         if (discordWebhookUrl.isEmpty()) {
-            logger.warning("[PlayerStatsToMySQL] Discord webhook URL not configured - webhook notifications disabled");
+            logger.warning("Discord webhook URL not configured - webhook notifications disabled");
             this.enabled = false;
             return false;
         }
         
-        logger.info("[PlayerStatsToMySQL] Webhook notifications initialized");
+        logger.info("Webhook notifications initialized");
         return true;
     }
     
@@ -171,10 +171,10 @@ public class WebhookManager {
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                 
                 if (response.statusCode() != 204) {
-                    logger.warning("[PlayerStatsToMySQL] Discord webhook failed with status: " + response.statusCode());
+                    logger.warning("Discord webhook failed with status: " + response.statusCode());
                 }
             } catch (IOException | InterruptedException e) {
-                logger.log(Level.WARNING, "[PlayerStatsToMySQL] Failed to send Discord webhook", e);
+                logger.log(Level.WARNING, "Failed to send Discord webhook", e);
             }
         });
     }

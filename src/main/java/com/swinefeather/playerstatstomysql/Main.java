@@ -1,6 +1,8 @@
 package com.swinefeather.playerstatstomysql;
 
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -25,33 +27,33 @@ public class Main extends JavaPlugin implements Listener {
         // Save default config first
         saveDefaultConfig();
         
-        getLogger().info("[PlayerStatsToMySQL] PlayerStatsToMySQL v1.0 starting up...");
+        getLogger().info("PlayerStatsToMySQL v1.0 starting up...");
         
         // Check database configuration
         String dbType = getConfig().getString("database.type", "mysql");
         boolean mysqlEnabled = getConfig().getBoolean("mysql.enabled", true);
         boolean supabaseEnabled = getConfig().getBoolean("supabase.enabled", false);
         
-        getLogger().info("[PlayerStatsToMySQL] Initial database configuration:");
-        getLogger().info("[PlayerStatsToMySQL]   Database type: " + dbType);
-        getLogger().info("[PlayerStatsToMySQL]   MySQL enabled: " + mysqlEnabled);
-        getLogger().info("[PlayerStatsToMySQL]   Supabase enabled: " + supabaseEnabled);
+        getLogger().info("Initial database configuration:");
+        getLogger().info("   Database type: " + dbType);
+        getLogger().info("   MySQL enabled: " + mysqlEnabled);
+        getLogger().info("   Supabase enabled: " + supabaseEnabled);
         
         if (dbType.equals("supabase")) {
             mysqlEnabled = false;
             supabaseEnabled = true;
-            getLogger().info("[PlayerStatsToMySQL] Database type is 'supabase', enabling Supabase and disabling MySQL");
+            getLogger().info("Database type is 'supabase', enabling Supabase and disabling MySQL");
         } else if (dbType.equals("both")) {
-            getLogger().info("[PlayerStatsToMySQL] Database type is 'both', both databases will be enabled");
+            getLogger().info("Database type is 'both', both databases will be enabled");
         } else {
-            getLogger().info("[PlayerStatsToMySQL] Database type is '" + dbType + "', using individual enabled flags");
+            getLogger().info("Database type is '" + dbType + "', using individual enabled flags");
         }
         
         // Initialize MySQL if enabled
         if (mysqlEnabled) {
             if (!initializeMySQL()) {
                 if (dbType.equals("mysql")) {
-                    getLogger().severe("[PlayerStatsToMySQL] MySQL initialization failed and it's the only database type configured!");
+                    getLogger().info("MySQL initialization failed and it's the only database type configured!");
                     return;
                 }
             }
@@ -61,7 +63,7 @@ public class Main extends JavaPlugin implements Listener {
         if (supabaseEnabled) {
             if (!initializeSupabase()) {
                 if (dbType.equals("supabase")) {
-                    getLogger().severe("[PlayerStatsToMySQL] Supabase initialization failed and it's the only database type configured!");
+                    getLogger().info("Supabase initialization failed and it's the only database type configured!");
                     return;
                 }
             }
@@ -70,7 +72,7 @@ public class Main extends JavaPlugin implements Listener {
         // Check if at least one database is working
         if ((dbManager == null || !dbManager.isConnected()) && 
             (supabaseManager == null || !supabaseManager.isEnabled())) {
-            getLogger().severe("[PlayerStatsToMySQL] No database connection established! Plugin cannot function.");
+            getLogger().info("No database connection established! Plugin cannot function.");
             return;
         }
 
@@ -101,8 +103,8 @@ public class Main extends JavaPlugin implements Listener {
             @Override
             public void run() {
                 if (!disabled) {
-                    getLogger().info("[PlayerStatsToMySQL] Running scheduled sync for online players...");
-                    statSyncTask.syncOnlinePlayers(null);
+                    getLogger().info("Running scheduled sync for all players (online and offline)...");
+                    syncAllAwardsAndStatsForAllPlayers();
                 }
             }
         }.runTaskTimerAsynchronously(this, syncInterval, syncInterval);
@@ -117,19 +119,23 @@ public class Main extends JavaPlugin implements Listener {
             }
         }.runTaskTimerAsynchronously(this, exportInterval, exportInterval);
 
-        getLogger().info("[PlayerStatsToMySQL] PlayerStatsToMySQL v1.0 enabled successfully!");
-        getLogger().info("[PlayerStatsToMySQL] Database type: " + dbType);
+        // Immediately trigger full sync for all players on startup
+        getLogger().info("Running initial full sync for all players (online and offline)...");
+        syncAllAwardsAndStatsForAllPlayers();
+
+        getLogger().info("PlayerStatsToMySQL v1.0 enabled successfully!");
+        getLogger().info("Database type: " + dbType);
         if (mysqlEnabled && dbManager != null && dbManager.isConnected()) {
-            getLogger().info("[PlayerStatsToMySQL] MySQL: Connected");
+            getLogger().info("MySQL: Connected");
         }
         if (supabaseEnabled && supabaseManager != null && supabaseManager.isEnabled()) {
-            getLogger().info("[PlayerStatsToMySQL] Supabase: Connected");
+            getLogger().info("Supabase: Connected");
         }
-        getLogger().info("[PlayerStatsToMySQL] Use /sqlstats help for available commands.");
+        getLogger().info("Use /sqlstats help for available commands.");
     }
     
     private boolean initializeMySQL() {
-        getLogger().info("[PlayerStatsToMySQL] Initializing MySQL connection...");
+        getLogger().info("Initializing MySQL connection...");
         
         // Validate MySQL config
         String dbUrl = getConfig().getString("mysql.url");
@@ -137,46 +143,46 @@ public class Main extends JavaPlugin implements Listener {
         String dbPassword = getConfig().getString("mysql.password");
         
         if (dbUrl == null || dbUrl.isEmpty() || dbUrl.contains("yourdatabaselink")) {
-            getLogger().severe("[PlayerStatsToMySQL] MySQL URL not configured properly!");
-            getLogger().severe("[PlayerStatsToMySQL] Please edit plugins/PlayerStatsToMySQL/config.yml and update the MySQL settings:");
-            getLogger().severe("[PlayerStatsToMySQL] mysql:");
-            getLogger().severe("[PlayerStatsToMySQL]   url: \"jdbc:mysql://your-server:3306/your-database\"");
-            getLogger().severe("[PlayerStatsToMySQL]   user: \"your-username\"");
-            getLogger().severe("[PlayerStatsToMySQL]   password: \"your-password\"");
+            getLogger().info("MySQL URL not configured properly!");
+            getLogger().info("Please edit plugins/PlayerStatsToMySQL/config.yml and update the MySQL settings:");
+            getLogger().info("mysql:");
+            getLogger().info("   url: \"jdbc:mysql://your-server:3306/your-database\"");
+            getLogger().info("   user: \"your-username\"");
+            getLogger().info("   password: \"your-password\"");
             return false;
         }
         
         if (dbUser == null || dbUser.isEmpty() || dbUser.contains("your_username")) {
-            getLogger().severe("[PlayerStatsToMySQL] MySQL username not configured!");
-            getLogger().severe("[PlayerStatsToMySQL] Please update the 'mysql.user' setting in config.yml");
+            getLogger().info("MySQL username not configured!");
+            getLogger().info("Please update the 'mysql.user' setting in config.yml");
             return false;
         }
         
         if (dbPassword == null || dbPassword.isEmpty() || dbPassword.contains("your_password")) {
-            getLogger().severe("[PlayerStatsToMySQL] MySQL password not configured!");
-            getLogger().severe("[PlayerStatsToMySQL] Please update the 'mysql.password' setting in config.yml");
+            getLogger().info("MySQL password not configured!");
+            getLogger().info("Please update the 'mysql.password' setting in config.yml");
             return false;
         }
         
         // Initialize database manager
         dbManager = new DatabaseManager(this);
         if (!dbManager.isConnected()) {
-            getLogger().severe("[PlayerStatsToMySQL] MySQL connection failed!");
-            getLogger().severe("[PlayerStatsToMySQL] Please check your MySQL settings in config.yml:");
-            getLogger().severe("[PlayerStatsToMySQL] - Ensure MySQL server is running");
-            getLogger().severe("[PlayerStatsToMySQL] - Verify database URL, username, and password");
-            getLogger().severe("[PlayerStatsToMySQL] - Check if database exists and user has proper permissions");
+            getLogger().info("MySQL connection failed!");
+            getLogger().info("Please check your MySQL settings in config.yml:");
+            getLogger().info("- Ensure MySQL server is running");
+            getLogger().info("- Verify database URL, username, and password");
+            getLogger().info("- Check if database exists and user has proper permissions");
             return false;
         }
         
-        getLogger().info("[PlayerStatsToMySQL] MySQL connection successful!");
+        getLogger().info("MySQL connection successful!");
         
         // Setup database tables
         try {
             dbManager.setupDatabase();
-            getLogger().info("[PlayerStatsToMySQL] MySQL tables created/verified successfully!");
+            getLogger().info("MySQL tables created/verified successfully!");
         } catch (Exception e) {
-            getLogger().severe("[PlayerStatsToMySQL] Failed to setup MySQL tables: " + e.getMessage());
+            getLogger().info("Failed to setup MySQL tables: " + e.getMessage());
             return false;
         }
         
@@ -184,51 +190,51 @@ public class Main extends JavaPlugin implements Listener {
     }
     
     private boolean initializeSupabase() {
-        getLogger().info("[PlayerStatsToMySQL] Initializing Supabase connection...");
+        getLogger().info("Initializing Supabase connection...");
         
         // Debug: Log the entire config section
-        getLogger().info("[PlayerStatsToMySQL] Database type from config: " + getConfig().getString("database.type", "not set"));
-        getLogger().info("[PlayerStatsToMySQL] Supabase enabled from config: " + getConfig().getBoolean("supabase.enabled", false));
+        getLogger().info("Database type from config: " + getConfig().getString("database.type", "not set"));
+        getLogger().info("Supabase enabled from config: " + getConfig().getBoolean("supabase.enabled", false));
         
         // Validate Supabase config
         String supabaseUrl = getConfig().getString("supabase.url");
         String supabaseKey = getConfig().getString("supabase.key");
         
-        getLogger().info("[PlayerStatsToMySQL] Raw Supabase URL from config: " + supabaseUrl);
-        getLogger().info("[PlayerStatsToMySQL] Raw Supabase key from config: " + (supabaseKey != null && supabaseKey.length() > 10 ? supabaseKey.substring(0, 10) + "..." : supabaseKey));
+        getLogger().info("Raw Supabase URL from config: " + supabaseUrl);
+        getLogger().info("Raw Supabase key from config: " + (supabaseKey != null && supabaseKey.length() > 10 ? supabaseKey.substring(0, 10) + "..." : supabaseKey));
         
         if (supabaseUrl == null || supabaseUrl.isEmpty()) {
-            getLogger().severe("[PlayerStatsToMySQL] Supabase URL is null or empty!");
+            getLogger().info("Supabase URL is null or empty!");
             return false;
         }
         
         if (supabaseUrl.contains("your-project")) {
-            getLogger().severe("[PlayerStatsToMySQL] Supabase URL still contains placeholder value!");
-            getLogger().severe("[PlayerStatsToMySQL] Please edit plugins/PlayerStatsToMySQL/config.yml and update the Supabase settings:");
-            getLogger().severe("[PlayerStatsToMySQL] supabase:");
-            getLogger().severe("[PlayerStatsToMySQL]   url: \"https://your-project.supabase.co\"");
-            getLogger().severe("[PlayerStatsToMySQL]   key: \"your-anon-key\"");
+            getLogger().info("Supabase URL still contains placeholder value!");
+            getLogger().info("Please edit plugins/PlayerStatsToMySQL/config.yml and update the Supabase settings:");
+            getLogger().info("supabase:");
+            getLogger().info("   url: \"https://your-project.supabase.co\"");
+            getLogger().info("   key: \"your-anon-key\"");
             return false;
         }
         
         if (supabaseKey == null || supabaseKey.isEmpty() || supabaseKey.contains("your-anon-key")) {
-            getLogger().severe("[PlayerStatsToMySQL] Supabase key not configured!");
-            getLogger().severe("[PlayerStatsToMySQL] Please update the 'supabase.key' setting in config.yml");
+            getLogger().info("Supabase key not configured!");
+            getLogger().info("Please update the 'supabase.key' setting in config.yml");
             return false;
         }
         
         // Initialize Supabase manager
         supabaseManager = new SupabaseManager(this);
         if (!supabaseManager.initialize(getConfig().getConfigurationSection("supabase"))) {
-            getLogger().severe("[PlayerStatsToMySQL] Supabase initialization failed!");
-            getLogger().severe("[PlayerStatsToMySQL] Please check your Supabase settings in config.yml:");
-            getLogger().severe("[PlayerStatsToMySQL] - Verify project URL and API key");
-            getLogger().severe("[PlayerStatsToMySQL] - Ensure tables 'players' and 'player_stats' exist");
-            getLogger().severe("[PlayerStatsToMySQL] - Check if RLS policies allow INSERT/UPDATE operations");
+            getLogger().info("Supabase initialization failed!");
+            getLogger().info("Please check your Supabase settings in config.yml:");
+            getLogger().info("- Verify project URL and API key");
+            getLogger().info("- Ensure tables 'players' and 'player_stats' exist");
+            getLogger().info("- Check if RLS policies allow INSERT/UPDATE operations");
             return false;
         }
         
-        getLogger().info("[PlayerStatsToMySQL] Supabase connection successful!");
+        getLogger().info("Supabase connection successful!");
         return true;
     }
 
@@ -243,7 +249,7 @@ public class Main extends JavaPlugin implements Listener {
         if (webhookManager != null) {
             webhookManager.shutdown();
         }
-        getLogger().info("[PlayerStatsToMySQL] PlayerStatsToMySQL v1.0 disabled!");
+        getLogger().info("PlayerStatsToMySQL v1.0 disabled!");
     }
 
     @EventHandler
@@ -251,7 +257,7 @@ public class Main extends JavaPlugin implements Listener {
         if (!disabled) {
             Player player = event.getPlayer();
             UUID playerUUID = player.getUniqueId();
-            getLogger().info("[PlayerStatsToMySQL] Syncing stats for player leaving: " + playerUUID);
+            getLogger().info("Syncing stats for player leaving: " + playerUUID);
             
             // Sync to MySQL
             if (dbManager != null && dbManager.isConnected()) {
@@ -283,8 +289,45 @@ public class Main extends JavaPlugin implements Listener {
                     sender.sendMessage("§cStatSyncTask not available. Plugin may not be fully initialized.");
                     return true;
                 }
-                sender.sendMessage("§aStarting full stat sync...");
-                statSyncTask.syncAllPlayers(sender);
+                // Parse sync type
+                String syncType = args.length > 1 ? args[1].toLowerCase() : "all";
+                switch (syncType) {
+                    case "all":
+                        sender.sendMessage("§aStarting full sync: stats, medals, points, awards...");
+                        statSyncTask.syncAllPlayers(sender);
+                        if (awardManager != null && awardManager.isEnabled()) {
+                            // TODO: Implement granular syncs in AwardManager
+                            awardManager.syncAllAwardsToSupabase();
+                            awardManager.syncAllMedalsToSupabase();
+                            awardManager.syncAllPointsToSupabase();
+                        }
+                        break;
+                    case "stats":
+                        sender.sendMessage("§aSyncing only player stats...");
+                        statSyncTask.syncAllPlayers(sender);
+                        break;
+                    case "awards":
+                        sender.sendMessage("§aSyncing only awards...");
+                        if (awardManager != null && awardManager.isEnabled()) {
+                            awardManager.syncAllAwardsToSupabase();
+                        }
+                        break;
+                    case "medals":
+                        sender.sendMessage("§aSyncing only medals...");
+                        if (awardManager != null && awardManager.isEnabled()) {
+                            awardManager.syncAllMedalsToSupabase();
+                        }
+                        break;
+                    case "points":
+                        sender.sendMessage("§aSyncing only points...");
+                        if (awardManager != null && awardManager.isEnabled()) {
+                            awardManager.syncAllPointsToSupabase();
+                        }
+                        break;
+                    default:
+                        sender.sendMessage("§cUnknown sync type. Use: all, stats, medals, points, awards");
+                        break;
+                }
                 return true;
             }
 
@@ -341,7 +384,7 @@ public class Main extends JavaPlugin implements Listener {
                         supabaseManager = new SupabaseManager(this);
                         if (!supabaseManager.initialize(getConfig().getConfigurationSection("supabase"))) {
                             sender.sendMessage("§cSupabase reinitialization failed! Check console for details.");
-                            getLogger().severe("[PlayerStatsToMySQL] Supabase reinitialization failed after reload!");
+                            getLogger().info("Supabase reinitialization failed after reload!");
                         } else {
                             sender.sendMessage("§aSupabase reinitialized successfully!");
                         }
@@ -389,7 +432,7 @@ public class Main extends JavaPlugin implements Listener {
                     
                 } catch (Exception e) {
                     sender.sendMessage("§cReload failed: " + e.getMessage());
-                    getLogger().severe("[PlayerStatsToMySQL] Reload failed: " + e.getMessage());
+                    getLogger().info("Reload failed: " + e.getMessage());
                 }
                 return true;
             }
@@ -499,5 +542,19 @@ public class Main extends JavaPlugin implements Listener {
             return true;
         }
         return false;
+    }
+
+    // Sync and recalculate all awards/stats for all players (online and offline)
+    public void syncAllAwardsAndStatsForAllPlayers() {
+        if (awardManager != null && awardManager.isEnabled()) {
+            // Load all stats for all players (offline and online)
+            Map<UUID, Map<String, Object>> allStats = awardManager.loadAllPlayerStats();
+            Map<Player, Map<String, Object>> onlineStats = new HashMap<>();
+            for (Player player : getServer().getOnlinePlayers()) {
+                onlineStats.put(player, allStats.getOrDefault(player.getUniqueId(), new HashMap<>()));
+            }
+            // Calculate and sync for all players (offline and online)
+            awardManager.calculateAllAwards(onlineStats);
+        }
     }
 }
