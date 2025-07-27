@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea for PlayerStatsToMySQL
+about: Suggest an idea for Progression
 title: '[FEATURE] '
 labels: ['enhancement']
 assignees: ''

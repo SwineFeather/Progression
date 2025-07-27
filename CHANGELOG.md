@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to PlayerStatsToMySQL will be documented in this file.
+All notable changes to Progression will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0] - 2025-07-06
 
 ### Added
-- Initial release of PlayerStatsToMySQL
+- Initial release of Progression
 - Automatic player statistics synchronization to MySQL database
 - Real-time stat updates when players leave the server
 - PlaceholderAPI integration for custom plugin data
@@ -56,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Version History
 
 ### Version 1.0
-- Complete rewrite and modernization of the plugin
+- Complete rewrite and modernization of the plugin (renamed from PlayerStatsToMySQL to Progression)
 - Fixed package structure and naming
 - Resolved null pointer exceptions
 - Improved player quit synchronization

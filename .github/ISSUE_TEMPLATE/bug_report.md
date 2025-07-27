@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Create a report to help us improve PlayerStatsToMySQL
+about: Create a report to help us improve Progression
 title: '[BUG] '
 labels: ['bug']
 assignees: ''
@@ -25,7 +25,7 @@ assignees: ''
 - **Minecraft Version**: 
 - **Server Type**: (Paper/Spigot/Other)
 - **Server Version**: 
-- **PlayerStatsToMySQL Version**: 
+- **Progression Version**: 
 - **Java Version**: 
 - **Database Type**: (MySQL/MariaDB)
 - **Database Version**: 
@@ -53,4 +53,4 @@ assignees: ''
 
 ---
 
-**Note**: Please ensure you're using the latest version of PlayerStatsToMySQL before reporting bugs. 
+**Note**: Please ensure you're using the latest version of Progression before reporting bugs. 

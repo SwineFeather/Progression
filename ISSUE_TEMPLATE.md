@@ -8,7 +8,7 @@
 - **Minecraft Version**: 
 - **Server Type**: (Paper/Spigot/Other)
 - **Server Version**: 
-- **PlayerStatsToMySQL Version**: 
+- **Progression Version**: 
 
 ## Description
 <!-- Provide a clear and concise description of the issue or feature request -->
@@ -49,4 +49,4 @@
 
 ---
 
-**Note**: Please ensure you're using the latest version of PlayerStatsToMySQL before reporting issues. 
+**Note**: Please ensure you're using the latest version of Progression before reporting issues. 

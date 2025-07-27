@@ -1,4 +1,4 @@
-# PlayerStatsToMySQL v1.0
+# Progression v1.0
 
 A Minecraft plugin that syncs player statistics to MySQL and/or Supabase databases. Perfect for creating websites, leaderboards, and analytics dashboards.
 
@@ -9,7 +9,7 @@ A Minecraft plugin that syncs player statistics to MySQL and/or Supabase databas
 - **Real-time Sync**: Automatic stat synchronization on player join/quit
 - **Batch Processing**: Efficient bulk operations with rate limiting
 - **PlaceholderAPI Integration**: Sync custom placeholders (Vault, Towny, etc.)
-- **Towny Integration**: Automatic town/nation data syncing
+- **Towny Integration**: Complete town leveling and achievement system
 - **Export System**: Export stats to JSON files
 - **Clean Stat Names**: Removes "minecraft:" prefixes for cleaner data
 
@@ -83,7 +83,7 @@ Run the provided `setup.sql` script in your MySQL database.
 4. Copy your project URL and anon key from Settings > API
 
 ### 4. Configure & Start
-1. Edit `plugins/PlayerStatsToMySQL/config.yml`
+1. Edit `plugins/Progression/config.yml`
 2. Set your database credentials
 3. Start your server
 4. Use `/sqlstats sync` for initial sync
@@ -142,16 +142,52 @@ placeholderapi:
     - townyadvanced_nationboard
 ```
 
+### Towny Integration
+```yaml
+towny:
+  enabled: true
+  
+  # Town leveling system
+  leveling:
+    enabled: true
+    xp_sources:
+      population: 10      # XP per resident
+      nation_member: 50   # XP for being in a nation
+      capital: 100        # XP for being a capital
+      plot_count: 5       # XP per plot
+      balance: 1          # XP per 1000 currency
+      age: 2              # XP per day of age
+      size: 3             # XP per chunk
+```
+
+**Commands:**
+- `/townstats info <town>` - Show town information
+- `/townstats level <town>` - Show town level
+- `/townstats achievements <town>` - Show town achievements with progress
+- `/townstats claim <town> <achievement> <tier>` - Claim town achievement
+- `/townstats leaderboard` - Show town rankings
+- `/townstats sync` - Manually sync towns (admin)
+- `/townstats reset <town>` - Reset town level and achievements (admin)
+
+See [TOWNY_INTEGRATION.md](TOWNY_INTEGRATION.md) for complete documentation.
+
 ## Commands
 
 | Command | Permission | Description |
 |---------|------------|-------------|
-| `/sqlstats sync` | `playerstatstomysql.sqlstats.sync` | Sync all player stats |
-| `/sqlstats export [json]` | `playerstatstomysql.sqlstats.export` | Export stats to file |
-| `/sqlstats view <player> <category>` | `playerstatstomysql.sqlstats.view` | View player stats |
-| `/sqlstats reload` | `playerstatstomysql.sqlstats.reload` | Reload configuration |
-| `/sqlstats status` | `playerstatstomysql.sqlstats.status` | Check plugin status |
-| `/sqlstats help` | `playerstatstomysql.sqlstats.help` | Show help |
+| `/sqlstats sync` | `progression.sqlstats.sync` | Sync all player stats |
+| `/sqlstats export [json]` | `progression.sqlstats.export` | Export stats to file |
+| `/sqlstats view <player> <category>` | `progression.sqlstats.view` | View player stats |
+| `/sqlstats reload` | `progression.sqlstats.reload` | Reload configuration |
+| `/sqlstats status` | `progression.sqlstats.status` | Check plugin status |
+| `/sqlstats help` | `progression.sqlstats.help` | Show help |
+| `/townstats info <town>` | `progression.towny.info` | Show town information |
+| `/townstats level <town>` | `progression.towny.level` | Show town level |
+| `/townstats achievements <town>` | `progression.towny.achievements` | Show town achievements |
+| `/townstats claim <town> <achievement> <tier>` | `progression.towny.admin` | Claim town achievement |
+| `/townstats leaderboard` | `progression.towny.leaderboard` | Show town rankings |
+| `/townstats sync` | `progression.towny.admin` | Manually sync towns |
+| `/townstats reset <town>` | `progression.towny.admin` | Reset town level and achievements |
 
 ## Database Schema
 

@@ -1,5 +1,12 @@
-# PlayerStatsToMySQL Configuration
+# Progression Configuration
 # Edit this file to configure your database connection and plugin settings
+
+# Level System Configuration
+level:
+  # Server-wide level up announcements
+  broadcast_level_ups: true
+  # Level up sound volume for other players (0.0 to 1.0)
+  level_up_sound_volume: 0.3
 
 # Database Configuration
 database:
@@ -16,15 +23,15 @@ mysql:
 # Supabase Configuration (if using supabase or both)
 supabase:
   enabled: true
-  url: "https://erdconvorgecupvavlwv.supabase.co"
-  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVyZGNvbnZvcmdlY3VwdmF2bHd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODM4ODcsImV4cCI6MjA2NTE1OTg4N30.1JAp47oJDpiNmnKjpYB_tS9__0Sytk18o8dL-Dfnrdg"
+  url: "https://your-supabase-url.supabase.co"
+  key: "Your key here"
   
   # Performance settings for rate limiting
   performance:
     batch_size: 1  # Sync one player at a time
-    batch_delay_ms: 1000  # 1 second between batches
+    batch_delay_ms: 5000  # 5 seconds between batches (increased from 2 seconds)
     max_concurrent_requests: 1  # Sequential processing
-    timeout_seconds: 30  # Request timeout
+    timeout_seconds: 30  # Request timeout (reduced from 60 seconds)
     
   # Sync settings
   sync:
@@ -49,6 +56,290 @@ placeholderapi:
 # Towny integration
 towny:
   enabled: true
+  
+  # Town leveling system
+  leveling:
+    enabled: true
+    xp_sources:
+      # XP per resident in the town
+      population: 10
+      # XP for being in a nation
+      nation_member: 50
+      # XP for being a capital town
+      capital: 100
+      # XP for being independent (not in a nation)
+      independent: 75
+      # XP per plot owned by the town
+      plot_count: 5
+      # XP for town balance (per 1000 currency)
+      balance: 1
+      # XP for town age (per day)
+      age: 2
+      # XP for town size (per chunk)
+      size: 3
+    
+    # Town level definitions (20 levels)
+    levels:
+      1:
+        name: "Outpost"
+        description: "A small gathering of settlers"
+        xp_required: 0
+        color: "#6b7280"
+      2:
+        name: "Camp"
+        description: "A temporary settlement"
+        xp_required: 25
+        color: "#6b7280"
+      3:
+        name: "Settlement"
+        description: "A permanent home for pioneers"
+        xp_required: 60
+        color: "#10b981"
+      4:
+        name: "Hamlet"
+        description: "A small but growing community"
+        xp_required: 110
+        color: "#10b981"
+      5:
+        name: "Village"
+        description: "A thriving rural settlement"
+        xp_required: 175
+        color: "#10b981"
+      6:
+        name: "Town"
+        description: "A bustling center of activity"
+        xp_required: 250
+        color: "#3b82f6"
+      7:
+        name: "Market Town"
+        description: "A hub of commerce and trade"
+        xp_required: 350
+        color: "#3b82f6"
+      8:
+        name: "Port Town"
+        description: "A coastal trading center"
+        xp_required: 475
+        color: "#3b82f6"
+      9:
+        name: "Mining Town"
+        description: "A settlement built on resources"
+        xp_required: 625
+        color: "#3b82f6"
+      10:
+        name: "Farming Town"
+        description: "A settlement sustained by agriculture"
+        xp_required: 800
+        color: "#3b82f6"
+      11:
+        name: "Trading Post"
+        description: "A center of regional commerce"
+        xp_required: 1000
+        color: "#8b5cf6"
+      12:
+        name: "Crossroads"
+        description: "A town at the intersection of trade routes"
+        xp_required: 1250
+        color: "#8b5cf6"
+      13:
+        name: "Fortress Town"
+        description: "A well-defended settlement"
+        xp_required: 1550
+        color: "#8b5cf6"
+      14:
+        name: "University Town"
+        description: "A center of learning and knowledge"
+        xp_required: 1900
+        color: "#8b5cf6"
+      15:
+        name: "Craftsmen Town"
+        description: "A settlement of skilled artisans"
+        xp_required: 2300
+        color: "#8b5cf6"
+      16:
+        name: "Merchant Town"
+        description: "A wealthy trading center"
+        xp_required: 2750
+        color: "#f59e0b"
+      17:
+        name: "Guild Town"
+        description: "A settlement of organized crafts"
+        xp_required: 3250
+        color: "#f59e0b"
+      18:
+        name: "Harbor Town"
+        description: "A major port settlement"
+        xp_required: 3800
+        color: "#f59e0b"
+      19:
+        name: "Frontier Town"
+        description: "A settlement on the edge of civilization"
+        xp_required: 4400
+        color: "#f59e0b"
+      20:
+        name: "Industrial Town"
+        description: "A center of manufacturing"
+        xp_required: 5100
+        color: "#f59e0b"
+  
+  # Town achievements
+  achievements:
+    enabled: true
+    
+    # Population achievements
+    population_milestone:
+      name: "Population Growth"
+      description: "Reach population milestones"
+      stat: "population"
+      color: "#10b981"
+      tiers:
+        1:
+          name: "Small Community"
+          description: "5 residents"
+          threshold: 5
+          points: 50
+        2:
+          name: "Growing Town"
+          description: "10 residents"
+          threshold: 10
+          points: 100
+        3:
+          name: "Thriving Community"
+          description: "25 residents"
+          threshold: 25
+          points: 200
+        4:
+          name: "Large Town"
+          description: "50 residents"
+          threshold: 50
+          points: 400
+        5:
+          name: "Metropolis"
+          description: "100 residents"
+          threshold: 100
+          points: 800
+    
+    # Wealth achievements
+    wealth_milestone:
+      name: "Economic Prosperity"
+      description: "Accumulate wealth"
+      stat: "balance"
+      color: "#f59e0b"
+      tiers:
+        1:
+          name: "Small Savings"
+          description: "1,000 currency"
+          threshold: 1000
+          points: 50
+        2:
+          name: "Modest Wealth"
+          description: "10,000 currency"
+          threshold: 10000
+          points: 100
+        3:
+          name: "Prosperous"
+          description: "100,000 currency"
+          threshold: 100000
+          points: 200
+        4:
+          name: "Wealthy"
+          description: "1,000,000 currency"
+          threshold: 1000000
+          points: 400
+        5:
+          name: "Mega Rich"
+          description: "10,000,000 currency"
+          threshold: 10000000
+          points: 800
+    
+    # Age achievements
+    age_milestone:
+      name: "Enduring Legacy"
+      description: "Survive and thrive over time"
+      stat: "age"
+      color: "#8b5cf6"
+      tiers:
+        1:
+          name: "Established"
+          description: "7 days old"
+          threshold: 7
+          points: 50
+        2:
+          name: "Seasoned"
+          description: "30 days old"
+          threshold: 30
+          points: 100
+        3:
+          name: "Ancient"
+          description: "100 days old"
+          threshold: 100
+          points: 200
+        4:
+          name: "Legendary"
+          description: "365 days old"
+          threshold: 365
+          points: 400
+        5:
+          name: "Timeless"
+          description: "1000 days old"
+          threshold: 1000
+          points: 800
+    
+    # Size achievements
+    size_milestone:
+      name: "Territorial Expansion"
+      description: "Expand your town's territory"
+      stat: "size"
+      color: "#3b82f6"
+      tiers:
+        1:
+          name: "Small Territory"
+          description: "10 chunks"
+          threshold: 10
+          points: 50
+        2:
+          name: "Modest Territory"
+          description: "25 chunks"
+          threshold: 25
+          points: 100
+        3:
+          name: "Large Territory"
+          description: "50 chunks"
+          threshold: 50
+          points: 200
+        4:
+          name: "Vast Territory"
+          description: "100 chunks"
+          threshold: 100
+          points: 400
+        5:
+          name: "Empire"
+          description: "500 chunks"
+          threshold: 500
+          points: 800
+  
+  # Sync settings
+  sync:
+    # Sync town data when players join/leave towns
+    on_town_change: true
+    # Sync town data periodically
+    interval_ticks: 72000  # 1 hour
+    # Sync town data on server startup
+    on_startup: true
+    # Sync town data when town balance changes
+    on_balance_change: true
+    # Sync town data when town size changes
+    on_size_change: true
+  
+  # Notifications
+  notifications:
+    # Announce town level ups
+    level_ups: true
+    # Announce town achievements
+    achievements: true
+    # Show town level in chat
+    show_level_in_chat: false
+    # Show town level in tab list
+    show_level_in_tab: false
 
 # Export settings
 export:
@@ -60,9 +351,22 @@ export:
     active_days: 30 # Keep data for 30 days
     keep_files_days: 90 # Keep export files for 90 days
 
-# Logging level (minimal/verbose/debug)
+# Logging level (minimal/verbose/debug/max)
 logging:
-  level: verbose
+  level: minimal  # Options: minimal, verbose, debug, max
+  # Minimal: Only essential info and errors
+  # Verbose: Basic progress info
+  # Debug: Detailed debugging info
+  # Max: Everything including stat details (use carefully)
+  
+  # Specific debug settings
+  debug:
+    show_stat_details: false  # Show individual stat lookups
+    show_player_processing: false  # Show "Processing offline player" messages
+    show_award_calculations: false  # Show individual award calculations
+    show_supabase_requests: false  # Show Supabase API requests
+    show_stat_paths: false  # Show stat path resolution
+    show_available_stats: false  # Show available stats for each player
 
 # Award System Configuration
 awards:
@@ -95,42 +399,42 @@ awards:
       name: "Warrior"
       description: "Player with the highest kill count"
       tier: "stone"
-      stat_path: "minecraft_killed.kills"
+      stat_path: "killed.total"
       enabled: true
     
     most_deaths:
       name: "Cannon Fodder"
       description: "Player with the highest death count"
       tier: "stone"
-      stat_path: "minecraft_killed_by.deaths"
+      stat_path: "killed_by.total"
       enabled: true
     
     most_damage_dealt:
       name: "Damage Dealer"
       description: "Player who dealt the most damage"
       tier: "iron"
-      stat_path: "minecraft_damage_dealt.damage_dealt"
+      stat_path: "custom.damage_dealt"
       enabled: true
     
     most_damage_taken:
       name: "Damage Sponge"
       description: "Player who took the most damage"
       tier: "stone"
-      stat_path: "minecraft_damage_taken.damage_taken"
+      stat_path: "custom.damage_taken"
       enabled: true
     
     most_damage_blocked:
       name: "Shield Master"
       description: "Player who blocked the most damage with shield"
       tier: "iron"
-      stat_path: "minecraft_damage_blocked_by_shield.damage_blocked_by_shield"
+      stat_path: "custom.damage_blocked_by_shield"
       enabled: true
     
     longest_survival:
       name: "Survivor"
       description: "Player with the longest time since death"
       tier: "iron"
-      stat_path: "minecraft_custom.time_since_death"
+      stat_path: "custom.time_since_death"
       enabled: true
     
     # Movement Awards
@@ -138,77 +442,77 @@ awards:
       name: "Wanderer"
       description: "Player who walked the farthest"
       tier: "stone"
-      stat_path: "minecraft_custom.walk_one_cm"
+      stat_path: "custom.walk_one_cm"
       enabled: true
     
     most_distance_sprinted:
       name: "Speed Demon"
       description: "Player who sprinted the farthest"
       tier: "stone"
-      stat_path: "minecraft_custom.sprint_one_cm"
+      stat_path: "custom.sprint_one_cm"
       enabled: true
     
     most_distance_swum:
       name: "Swimmer"
       description: "Player who swam the farthest"
       tier: "stone"
-      stat_path: "minecraft_custom.swim_one_cm"
+      stat_path: "custom.swim_one_cm"
       enabled: true
     
     most_distance_fallen:
       name: "Gravity Victim"
       description: "Player who fell the farthest"
       tier: "stone"
-      stat_path: "minecraft_custom.fall_one_cm"
+      stat_path: "custom.fall_one_cm"
       enabled: true
     
     most_distance_flown:
       name: "Bird"
       description: "Player who flew the farthest"
       tier: "iron"
-      stat_path: "minecraft_custom.fly_one_cm"
+      stat_path: "custom.fly_one_cm"
       enabled: true
     
     most_jumps:
       name: "Bunny"
       description: "Player who jumped the most"
       tier: "stone"
-      stat_path: "minecraft_custom.jump"
+      stat_path: "custom.jump"
       enabled: true
     
     most_distance_ridden:
       name: "Rider"
       description: "Player who rode the farthest"
       tier: "stone"
-      stat_path: "minecraft_custom.ride_one_cm"
+      stat_path: "custom.horse_one_cm"
       enabled: true
     
     most_distance_boat:
       name: "Sailor"
       description: "Player who traveled farthest by boat"
       tier: "stone"
-      stat_path: "minecraft_custom.boat_one_cm"
+      stat_path: "custom.boat_one_cm"
       enabled: true
     
     most_distance_horse:
       name: "Cowboy"
       description: "Player who traveled farthest on horse"
       tier: "stone"
-      stat_path: "minecraft_custom.horse_one_cm"
+      stat_path: "custom.horse_one_cm"
       enabled: true
     
     most_distance_minecart:
       name: "Conductor"
       description: "Player who traveled farthest in minecart"
       tier: "stone"
-      stat_path: "minecraft_custom.minecart_one_cm"
+      stat_path: "custom.minecart_one_cm"
       enabled: true
     
     most_distance_strider:
       name: "Nether Walker"
       description: "Player who traveled farthest on strider"
       tier: "iron"
-      stat_path: "minecraft_custom.strider_one_cm"
+      stat_path: "custom.strider_one_cm"
       enabled: true
     
     # Mining Awards
@@ -216,105 +520,105 @@ awards:
       name: "Miner"
       description: "Player who mined the most blocks"
       tier: "stone"
-      stat_path: "minecraft_mined.mined"
+      stat_path: "mined.total"
       enabled: true
     
     most_diamonds_mined:
       name: "Diamond Hunter"
       description: "Player who mined the most diamonds"
       tier: "diamond"
-      stat_path: "minecraft_mined.diamond_ore"
+      stat_path: "mined.diamond_ore"
       enabled: true
     
     most_iron_mined:
       name: "Iron Miner"
       description: "Player who mined the most iron"
       tier: "stone"
-      stat_path: "minecraft_mined.iron_ore"
+      stat_path: "mined.iron_ore"
       enabled: true
     
     most_coal_mined:
       name: "Coal Miner"
       description: "Player who mined the most coal"
       tier: "stone"
-      stat_path: "minecraft_mined.coal_ore"
+      stat_path: "mined.coal_ore"
       enabled: true
     
     most_gold_mined:
       name: "Gold Digger"
       description: "Player who mined the most gold"
       tier: "iron"
-      stat_path: "minecraft_mined.gold_ore"
+      stat_path: "mined.gold_ore"
       enabled: true
     
     most_emeralds_mined:
       name: "Emerald Hunter"
       description: "Player who mined the most emeralds"
       tier: "iron"
-      stat_path: "minecraft_mined.emerald_ore"
+      stat_path: "mined.emerald_ore"
       enabled: true
     
     most_redstone_mined:
       name: "Redstone Engineer"
       description: "Player who mined the most redstone"
       tier: "stone"
-      stat_path: "minecraft_mined.redstone_ore"
+      stat_path: "mined.redstone_ore"
       enabled: true
     
     most_lapis_mined:
       name: "Lapis Collector"
       description: "Player who mined the most lapis"
       tier: "stone"
-      stat_path: "minecraft_mined.lapis_ore"
+      stat_path: "mined.lapis_ore"
       enabled: true
     
     most_quartz_mined:
       name: "Nether Miner"
       description: "Player who mined the most quartz"
       tier: "iron"
-      stat_path: "minecraft_mined.nether_quartz_ore"
+      stat_path: "mined.nether_quartz_ore"
       enabled: true
     
     most_ancient_debris_mined:
       name: "Netherite Hunter"
       description: "Player who mined the most ancient debris"
       tier: "diamond"
-      stat_path: "minecraft_mined.ancient_debris"
+      stat_path: "mined.ancient_debris"
       enabled: true
     
     most_obsidian_mined:
       name: "Obsidian Cutter"
       description: "Player who mined the most obsidian"
       tier: "iron"
-      stat_path: "minecraft_mined.obsidian"
+      stat_path: "mined.obsidian"
       enabled: true
     
     most_stone_mined:
       name: "Stone Mason"
       description: "Player who mined the most stone"
       tier: "stone"
-      stat_path: "minecraft_mined.stone"
+      stat_path: "mined.stone"
       enabled: true
     
     most_deepslate_mined:
       name: "Deep Miner"
       description: "Player who mined the most deepslate"
       tier: "iron"
-      stat_path: "minecraft_mined.deepslate"
+      stat_path: "mined.deepslate"
       enabled: true
     
     most_copper_mined:
       name: "Copper Miner"
       description: "Player who mined the most copper"
       tier: "stone"
-      stat_path: "minecraft_mined.copper_ore"
+      stat_path: "mined.copper_ore"
       enabled: true
     
     most_amethyst_mined:
       name: "Crystal Hunter"
       description: "Player who mined the most amethyst"
       tier: "iron"
-      stat_path: "minecraft_mined.amethyst_cluster"
+      stat_path: "mined.amethyst_cluster"
       enabled: true
     
     # Crafting Awards
@@ -322,77 +626,77 @@ awards:
       name: "Crafter"
       description: "Player who crafted the most items"
       tier: "stone"
-      stat_path: "minecraft_crafted.crafted"
+      stat_path: "crafted.total"
       enabled: true
     
     most_crafting_table:
       name: "Table Master"
       description: "Player who crafted the most crafting tables"
       tier: "stone"
-      stat_path: "minecraft_crafted.crafting_table"
+      stat_path: "crafted.crafting_table"
       enabled: true
     
     most_furnace:
       name: "Smelter"
       description: "Player who crafted the most furnaces"
       tier: "stone"
-      stat_path: "minecraft_crafted.furnace"
+      stat_path: "crafted.furnace"
       enabled: true
     
     most_chest:
       name: "Storage Master"
       description: "Player who crafted the most chests"
       tier: "stone"
-      stat_path: "minecraft_crafted.chest"
+      stat_path: "crafted.chest"
       enabled: true
     
     most_torch:
       name: "Light Bringer"
       description: "Player who crafted the most torches"
       tier: "stone"
-      stat_path: "minecraft_crafted.torch"
+      stat_path: "crafted.torch"
       enabled: true
     
     most_stick:
       name: "Stick Collector"
       description: "Player who crafted the most sticks"
       tier: "stone"
-      stat_path: "minecraft_crafted.stick"
+      stat_path: "crafted.stick"
       enabled: true
     
     most_wooden_pickaxe:
       name: "Wooden Tool Maker"
       description: "Player who crafted the most wooden pickaxes"
       tier: "stone"
-      stat_path: "minecraft_crafted.wooden_pickaxe"
+      stat_path: "crafted.wooden_pickaxe"
       enabled: true
     
     most_stone_pickaxe:
       name: "Stone Tool Maker"
       description: "Player who crafted the most stone pickaxes"
       tier: "stone"
-      stat_path: "minecraft_crafted.stone_pickaxe"
+      stat_path: "crafted.stone_pickaxe"
       enabled: true
     
     most_iron_pickaxe:
       name: "Iron Tool Maker"
       description: "Player who crafted the most iron pickaxes"
       tier: "iron"
-      stat_path: "minecraft_crafted.iron_pickaxe"
+      stat_path: "crafted.iron_pickaxe"
       enabled: true
     
     most_diamond_pickaxe:
       name: "Diamond Tool Maker"
       description: "Player who crafted the most diamond pickaxes"
       tier: "diamond"
-      stat_path: "minecraft_crafted.diamond_pickaxe"
+      stat_path: "crafted.diamond_pickaxe"
       enabled: true
     
     most_netherite_pickaxe:
       name: "Netherite Tool Maker"
       description: "Player who crafted the most netherite pickaxes"
       tier: "diamond"
-      stat_path: "minecraft_crafted.netherite_pickaxe"
+      stat_path: "crafted.netherite_pickaxe"
       enabled: true
     
     # Farming Awards
@@ -400,77 +704,77 @@ awards:
       name: "Wheat Farmer"
       description: "Player who harvested the most wheat"
       tier: "stone"
-      stat_path: "minecraft_picked_up.wheat"
+      stat_path: "picked_up.wheat"
       enabled: true
     
     most_potatoes:
       name: "Potato Farmer"
       description: "Player who harvested the most potatoes"
       tier: "stone"
-      stat_path: "minecraft_picked_up.potato"
+      stat_path: "picked_up.potato"
       enabled: true
     
     most_carrots:
       name: "Carrot Farmer"
       description: "Player who harvested the most carrots"
       tier: "stone"
-      stat_path: "minecraft_picked_up.carrot"
+      stat_path: "picked_up.carrot"
       enabled: true
     
     most_beetroots:
       name: "Beetroot Farmer"
       description: "Player who harvested the most beetroots"
       tier: "stone"
-      stat_path: "minecraft_picked_up.beetroot"
+      stat_path: "picked_up.beetroot"
       enabled: true
     
     most_pumpkins:
       name: "Pumpkin Farmer"
       description: "Player who harvested the most pumpkins"
       tier: "stone"
-      stat_path: "minecraft_picked_up.pumpkin"
+      stat_path: "picked_up.pumpkin"
       enabled: true
     
     most_melons:
       name: "Melon Farmer"
       description: "Player who harvested the most melons"
       tier: "stone"
-      stat_path: "minecraft_picked_up.melon_slice"
+      stat_path: "picked_up.melon_slice"
       enabled: true
     
     most_sugar_cane:
       name: "Sugar Cane Farmer"
       description: "Player who harvested the most sugar cane"
       tier: "stone"
-      stat_path: "minecraft_picked_up.sugar_cane"
+      stat_path: "picked_up.sugar_cane"
       enabled: true
     
     most_nether_wart:
       name: "Nether Farmer"
       description: "Player who harvested the most nether wart"
       tier: "iron"
-      stat_path: "minecraft_picked_up.nether_wart"
+      stat_path: "picked_up.nether_wart"
       enabled: true
     
     most_chorus_fruit:
       name: "End Farmer"
       description: "Player who harvested the most chorus fruit"
       tier: "iron"
-      stat_path: "minecraft_picked_up.chorus_fruit"
+      stat_path: "picked_up.chorus_fruit"
       enabled: true
     
     most_sweet_berries:
       name: "Berry Picker"
       description: "Player who harvested the most sweet berries"
       tier: "stone"
-      stat_path: "minecraft_picked_up.sweet_berries"
+      stat_path: "picked_up.sweet_berries"
       enabled: true
     
     most_glow_berries:
       name: "Glow Berry Picker"
       description: "Player who harvested the most glow berries"
       tier: "iron"
-      stat_path: "minecraft_picked_up.glow_berries"
+      stat_path: "picked_up.glow_berries"
       enabled: true
     
     # Fishing Awards
@@ -478,21 +782,21 @@ awards:
       name: "Fisherman"
       description: "Player who caught the most fish"
       tier: "stone"
-      stat_path: "minecraft_fished.fish_caught"
+      stat_path: "fished.fish_caught"
       enabled: true
     
     most_junk_fished:
       name: "Junk Collector"
       description: "Player who fished the most junk"
       tier: "stone"
-      stat_path: "minecraft_fished.junk_fished"
+      stat_path: "fished.junk_fished"
       enabled: true
     
     most_treasure_fished:
       name: "Treasure Hunter"
       description: "Player who fished the most treasure"
       tier: "iron"
-      stat_path: "minecraft_fished.treasure_fished"
+      stat_path: "fished.treasure_fished"
       enabled: true
     
     # Building Awards
@@ -500,99 +804,99 @@ awards:
       name: "Builder"
       description: "Player who placed the most blocks"
       tier: "stone"
-      stat_path: "minecraft_used.used"
+      stat_path: "custom.blocks_placed"
       enabled: true
     
     most_stone_placed:
       name: "Stone Builder"
       description: "Player who placed the most stone"
       tier: "stone"
-      stat_path: "minecraft_used.stone"
+      stat_path: "used.stone"
       enabled: true
     
     most_dirt_placed:
       name: "Dirt Builder"
       description: "Player who placed the most dirt"
       tier: "stone"
-      stat_path: "minecraft_used.dirt"
+      stat_path: "used.dirt"
       enabled: true
     
     most_wood_placed:
       name: "Wood Builder"
       description: "Player who placed the most wood"
       tier: "stone"
-      stat_path: "minecraft_used.oak_planks"
+      stat_path: "used.oak_planks"
       enabled: true
     
     most_glass_placed:
       name: "Glass Builder"
       description: "Player who placed the most glass"
       tier: "stone"
-      stat_path: "minecraft_used.glass"
+      stat_path: "used.glass"
       enabled: true
     
     most_torch_placed:
       name: "Light Placer"
       description: "Player who placed the most torches"
       tier: "stone"
-      stat_path: "minecraft_used.torch"
+      stat_path: "used.torch"
       enabled: true
     
     most_chest_placed:
       name: "Storage Placer"
       description: "Player who placed the most chests"
       tier: "stone"
-      stat_path: "minecraft_used.chest"
+      stat_path: "used.chest"
       enabled: true
     
     most_furnace_placed:
       name: "Furnace Placer"
       description: "Player who placed the most furnaces"
       tier: "stone"
-      stat_path: "minecraft_used.furnace"
+      stat_path: "used.furnace"
       enabled: true
     
     most_crafting_table_placed:
       name: "Table Placer"
       description: "Player who placed the most crafting tables"
       tier: "stone"
-      stat_path: "minecraft_used.crafting_table"
+      stat_path: "used.crafting_table"
       enabled: true
     
     # Combat Weapon Awards
     most_sword_kills:
       name: "Swordsman"
       description: "Player who killed the most with swords"
-      tier: "stone"
-      stat_path: "minecraft_killed_by.sword"
+      tier: "iron"
+      stat_path: "custom.player_kills"
       enabled: true
     
     most_axe_kills:
       name: "Axeman"
       description: "Player who killed the most with axes"
       tier: "iron"
-      stat_path: "minecraft_killed_by.axe"
+      stat_path: "custom.player_kills"
       enabled: true
     
     most_bow_kills:
       name: "Archer"
       description: "Player who killed the most with bows"
       tier: "iron"
-      stat_path: "minecraft_killed_by.bow"
+      stat_path: "custom.player_kills"
       enabled: true
     
     most_crossbow_kills:
       name: "Crossbowman"
       description: "Player who killed the most with crossbows"
       tier: "iron"
-      stat_path: "minecraft_killed_by.crossbow"
+      stat_path: "custom.player_kills"
       enabled: true
     
     most_trident_kills:
       name: "Trident Master"
       description: "Player who killed the most with tridents"
       tier: "diamond"
-      stat_path: "minecraft_killed_by.trident"
+      stat_path: "custom.player_kills"
       enabled: true
     
     # Mob Kill Awards
@@ -600,105 +904,105 @@ awards:
       name: "Zombie Slayer"
       description: "Player who killed the most zombies"
       tier: "stone"
-      stat_path: "minecraft_killed.zombie"
+      stat_path: "killed.zombie"
       enabled: true
     
     most_skeletons_killed:
       name: "Skeleton Slayer"
       description: "Player who killed the most skeletons"
       tier: "stone"
-      stat_path: "minecraft_killed.skeleton"
+      stat_path: "killed.skeleton"
       enabled: true
     
     most_spiders_killed:
       name: "Spider Slayer"
       description: "Player who killed the most spiders"
       tier: "stone"
-      stat_path: "minecraft_killed.spider"
+      stat_path: "killed.spider"
       enabled: true
     
     most_creepers_killed:
       name: "Creeper Slayer"
       description: "Player who killed the most creepers"
       tier: "iron"
-      stat_path: "minecraft_killed.creeper"
+      stat_path: "killed.creeper"
       enabled: true
     
     most_endermen_killed:
       name: "Enderman Slayer"
       description: "Player who killed the most endermen"
       tier: "iron"
-      stat_path: "minecraft_killed.enderman"
+      stat_path: "killed.enderman"
       enabled: true
     
     most_blazes_killed:
       name: "Blaze Slayer"
       description: "Player who killed the most blazes"
       tier: "iron"
-      stat_path: "minecraft_killed.blaze"
+      stat_path: "killed.blaze"
       enabled: true
     
     most_ghasts_killed:
       name: "Ghast Slayer"
       description: "Player who killed the most ghasts"
       tier: "iron"
-      stat_path: "minecraft_killed.ghast"
+      stat_path: "killed.ghast"
       enabled: true
     
     most_wither_skeletons_killed:
       name: "Wither Skeleton Slayer"
       description: "Player who killed the most wither skeletons"
       tier: "diamond"
-      stat_path: "minecraft_killed.wither_skeleton"
+      stat_path: "killed.wither_skeleton"
       enabled: true
     
     most_piglins_killed:
       name: "Piglin Slayer"
       description: "Player who killed the most piglins"
       tier: "iron"
-      stat_path: "minecraft_killed.piglin"
+      stat_path: "killed.piglin"
       enabled: true
     
     most_hoglins_killed:
       name: "Hoglin Slayer"
       description: "Player who killed the most hoglins"
       tier: "iron"
-      stat_path: "minecraft_killed.hoglin"
+      stat_path: "killed.hoglin"
       enabled: true
     
     most_wardens_killed:
       name: "Warden Slayer"
       description: "Player who killed the most wardens"
       tier: "diamond"
-      stat_path: "minecraft_killed.warden"
+      stat_path: "killed.warden"
       enabled: true
     
     most_elder_guardians_killed:
       name: "Elder Guardian Slayer"
       description: "Player who killed the most elder guardians"
       tier: "diamond"
-      stat_path: "minecraft_killed.elder_guardian"
+      stat_path: "killed.elder_guardian"
       enabled: true
     
     most_evokers_killed:
       name: "Evoker Slayer"
       description: "Player who killed the most evokers"
       tier: "diamond"
-      stat_path: "minecraft_killed.evoker"
+      stat_path: "killed.evoker"
       enabled: true
     
     most_ravagers_killed:
       name: "Ravager Slayer"
       description: "Player who killed the most ravagers"
       tier: "diamond"
-      stat_path: "minecraft_killed.ravager"
+      stat_path: "killed.ravager"
       enabled: true
     
     most_shulkers_killed:
       name: "Shulker Slayer"
       description: "Player who killed the most shulkers"
       tier: "diamond"
-      stat_path: "minecraft_killed.shulker"
+      stat_path: "killed.shulker"
       enabled: true
     
     # Interaction Awards
@@ -706,739 +1010,1916 @@ awards:
       name: "Chest Opener"
       description: "Player who opened the most chests"
       tier: "stone"
-      stat_path: "minecraft_opened.chest"
+      stat_path: "opened.chest"
       enabled: true
     
     most_furnaces_opened:
       name: "Furnace Opener"
       description: "Player who opened the most furnaces"
       tier: "stone"
-      stat_path: "minecraft_opened.furnace"
+      stat_path: "opened.furnace"
       enabled: true
     
     most_crafting_tables_opened:
       name: "Table Opener"
       description: "Player who opened the most crafting tables"
       tier: "stone"
-      stat_path: "minecraft_opened.crafting_table"
+      stat_path: "opened.crafting_table"
       enabled: true
     
     most_anvils_opened:
       name: "Anvil Opener"
       description: "Player who opened the most anvils"
       tier: "iron"
-      stat_path: "minecraft_opened.anvil"
+      stat_path: "custom.interact_with_anvil"
       enabled: true
     
     most_enchanting_tables_opened:
       name: "Enchanter"
       description: "Player who opened the most enchanting tables"
       tier: "iron"
-      stat_path: "minecraft_opened.enchanting_table"
+      stat_path: "custom.interact_with_enchanting_table"
       enabled: true
     
     most_brewing_stands_opened:
       name: "Brewer"
       description: "Player who opened the most brewing stands"
       tier: "iron"
-      stat_path: "minecraft_opened.brewing_stand"
+      stat_path: "custom.interact_with_brewingstand"
+      enabled: true
+    
+    most_crafting_tables_opened:
+      name: "Table Opener"
+      description: "Player who opened the most crafting tables"
+      tier: "stone"
+      stat_path: "custom.interact_with_crafting_table"
       enabled: true
     
     most_ender_chests_opened:
       name: "Ender Chest Opener"
       description: "Player who opened the most ender chests"
       tier: "diamond"
-      stat_path: "minecraft_opened.ender_chest"
+      stat_path: "custom.open_enderchest"
       enabled: true
     
     most_shulker_boxes_opened:
       name: "Shulker Box Opener"
       description: "Player who opened the most shulker boxes"
       tier: "diamond"
-      stat_path: "minecraft_opened.shulker_box"
+      stat_path: "custom.open_shulker_box"
       enabled: true
     
-    # Advancement Awards
-    most_advancements:
-      name: "Achiever"
+    most_furnaces_opened:
+      name: "Furnace Opener"
+      description: "Player who opened the most furnaces"
+      tier: "stone"
+      stat_path: "custom.interact_with_furnace"
+      enabled: true
+    
+    most_chests_opened:
+      name: "Chest Opener"
+      description: "Player who opened the most chests"
+      tier: "stone"
+      stat_path: "custom.open_chest"
+      enabled: true
+    
+    most_blocks_placed:
+      name: "Builder"
+      description: "Player who placed the most blocks"
+      tier: "stone"
+      stat_path: "custom.blocks_placed"
+      enabled: true
+    
+    most_axe_kills:
+      name: "Axeman"
+      description: "Player who killed the most with axes"
+      tier: "iron"
+      stat_path: "custom.player_kills"
+      enabled: true
+    
+    most_bow_kills:
+      name: "Archer"
+      description: "Player who killed the most with bows"
+      tier: "iron"
+      stat_path: "custom.player_kills"
+      enabled: true
+    
+    most_crossbow_kills:
+      name: "Crossbowman"
+      description: "Player who killed the most with crossbows"
+      tier: "iron"
+      stat_path: "custom.player_kills"
+      enabled: true
+    
+    most_trident_kills:
+      name: "Trident Master"
+      description: "Player who killed the most with tridents"
+      tier: "diamond"
+      stat_path: "custom.player_kills"
+      enabled: true
+    
+    most_sword_kills:
+      name: "Swordsman"
+      description: "Player who killed the most with swords"
+      tier: "iron"
+      stat_path: "custom.player_kills"
+      enabled: true
+    
+    most_fish_caught:
+      name: "Fisherman"
+      description: "Player who caught the most fish"
+      tier: "stone"
+      stat_path: "custom.fish_caught"
+      enabled: true
+    
+    most_junk_fished:
+      name: "Junk Collector"
+      description: "Player who fished the most junk"
+      tier: "stone"
+      stat_path: "custom.fish_caught"
+      enabled: true
+    
+    most_treasure_fished:
+      name: "Treasure Hunter"
+      description: "Player who fished the most treasure"
+      tier: "iron"
+      stat_path: "custom.fish_caught"
+      enabled: true
+    
+    most_times_used_elytra:
+      name: "Sky Glider"
+      description: "Player who used Elytra the most. Soaring high!"
+      tier: "iron"
+      stat_path: "custom.elytra_used"
+      enabled: true
+    
+    most_times_used_elytra_in_overworld:
+      name: "Overworld Glider"
+      description: "Player who used Elytra the most in the overworld"
+      tier: "iron"
+      stat_path: "custom.elytra_used_in_overworld"
+      enabled: true
+    
+    most_times_used_elytra_in_nether:
+      name: "Nether Glider"
+      description: "Player who used Elytra the most in the nether"
+      tier: "iron"
+      stat_path: "custom.elytra_used_in_nether"
+      enabled: true
+    
+    most_times_used_elytra_in_end:
+      name: "End Glider"
+      description: "Player who used Elytra the most in the end"
+      tier: "iron"
+      stat_path: "custom.elytra_used_in_end"
+      enabled: true
+    
+    most_times_used_totem_of_undying:
+      name: "Immortal"
+      description: "Player who used the most Totems of Undying. Death? Never heard of it!"
+      tier: "diamond"
+      stat_path: "used.totem_of_undying"
+      enabled: true
+    
+    most_times_used_totem_of_undying_in_overworld:
+      name: "Overworld Survivor"
+      description: "Player who used the most Totems of Undying in the overworld"
+      tier: "diamond"
+      stat_path: "used.totem_of_undying"
+      enabled: true
+    
+    most_times_used_totem_of_undying_in_nether:
+      name: "Nether Survivor"
+      description: "Player who used the most Totems of Undying in the nether"
+      tier: "diamond"
+      stat_path: "used.totem_of_undying"
+      enabled: true
+    
+    most_times_used_totem_of_undying_in_end:
+      name: "End Survivor"
+      description: "Player who used the most Totems of Undying in the end"
+      tier: "diamond"
+      stat_path: "used.totem_of_undying"
+      enabled: true
+    
+    most_times_used_totem:
+      name: "Totem User"
+      description: "Player who used the most Totems of Undying. Not today!"
+      tier: "iron"
+      stat_path: "used.totem_of_undying"
+      enabled: true
+    
+    most_times_used_record:
+      name: "Music Lover"
+      description: "Player who used the most music discs"
+      tier: "stone"
+      stat_path: "custom.play_record"
+      enabled: true
+    
+    most_times_used_rabbit_stew:
+      name: "Rabbit Stew Lover"
+      description: "Player who used the most rabbit stew"
+      tier: "stone"
+      stat_path: "used.rabbit_stew"
+      enabled: true
+    
+    most_times_used_sugar:
+      name: "Sugar Addict"
+      description: "Player who used the most sugar"
+      tier: "stone"
+      stat_path: "used.sugar"
+      enabled: true
+    
+    most_times_used_dragon_breath:
+      name: "Dragon Breath Collector"
+      description: "Player who used the most dragon breath"
+      tier: "diamond"
+      stat_path: "used.dragon_breath"
+      enabled: true
+    
+    most_times_used_phantom_membrane:
+      name: "Phantom Membrane User"
+      description: "Player who used the most phantom membrane"
+      tier: "iron"
+      stat_path: "used.phantom_membrane"
+      enabled: true
+    
+    most_times_used_banner:
+      name: "Banner Designer"
+      description: "Player who used the most banners"
+      tier: "stone"
+      stat_path: "used.banner"
+      enabled: true
+    
+    most_times_used_clock:
+      name: "Time Keeper"
+      description: "Player who used the most clocks"
+      tier: "stone"
+      stat_path: "used.clock"
+      enabled: true
+    
+    most_times_used_name_tag:
+      name: "Name Tagger"
+      description: "Player who used the most name tags"
+      tier: "iron"
+      stat_path: "used.name_tag"
+      enabled: true
+    
+    most_times_used_nether_star:
+      name: "Nether Star User"
+      description: "Player who used the most nether stars"
+      tier: "diamond"
+      stat_path: "used.nether_star"
+      enabled: true
+    
+    most_times_used_conduit:
+      name: "Conduit User"
+      description: "Player who used the most conduits"
+      tier: "diamond"
+      stat_path: "used.conduit"
+      enabled: true
+    
+    most_times_used_turtle_helmet:
+      name: "Turtle Helmet User"
+      description: "Player who used the most turtle helmets"
+      tier: "iron"
+      stat_path: "used.turtle_helmet"
+      enabled: true
+    
+    most_times_used_bell:
+      name: "Bell Ringer"
+      description: "Player who used the most bells"
+      tier: "stone"
+      stat_path: "used.bell"
+      enabled: true
+    
+    most_times_used_note_block:
+      name: "Musician"
+      description: "Player who used the most note blocks"
+      tier: "stone"
+      stat_path: "custom.play_noteblock"
+      enabled: true
+    
+    most_times_used_jukebox:
+      name: "DJ"
+      description: "Player who used the most jukeboxes"
+      tier: "stone"
+      stat_path: "used.jukebox"
+      enabled: true
+    
+    most_times_used_beacon:
+      name: "Beacon User"
+      description: "Player who used the most beacons"
+      tier: "diamond"
+      stat_path: "used.beacon"
+      enabled: true
+    
+    most_times_used_glow_berries:
+      name: "Glow Berry Eater"
+      description: "Player who used the most glow berries"
+      tier: "stone"
+      stat_path: "used.glow_berries"
+      enabled: true
+    
+    most_times_used_sweet_berries:
+      name: "Sweet Berry Eater"
+      description: "Player who used the most sweet berries"
+      tier: "stone"
+      stat_path: "used.sweet_berries"
+      enabled: true
+    
+    most_times_used_mushroom_stew:
+      name: "Mushroom Stew Lover"
+      description: "Player who used the most mushroom stew"
+      tier: "stone"
+      stat_path: "used.mushroom_stew"
+      enabled: true
+    
+    most_times_used_pumpkin_pie:
+      name: "Pumpkin Pie Lover"
+      description: "Player who used the most pumpkin pie"
+      tier: "stone"
+      stat_path: "used.pumpkin_pie"
+      enabled: true
+    
+    most_times_used_beetroot_soup:
+      name: "Beetroot Soup Lover"
+      description: "Player who used the most beetroot soup"
+      tier: "stone"
+      stat_path: "used.beetroot_soup"
+      enabled: true
+    
+    most_times_used_apple:
+      name: "Apple Eater"
+      description: "Player who used the most apples"
+      tier: "stone"
+      stat_path: "used.apple"
+      enabled: true
+    
+    most_times_used_cookie:
+      name: "Cookie Monster"
+      description: "Player who used the most cookies"
+      tier: "stone"
+      stat_path: "used.cookie"
+      enabled: true
+    
+    most_times_used_chorus_fruit:
+      name: "Chorus Fruit Eater"
+      description: "Player who used the most chorus fruit"
+      tier: "iron"
+      stat_path: "used.chorus_fruit"
+      enabled: true
+    
+    most_times_used_pufferfish:
+      name: "Pufferfish Eater"
+      description: "Player who used the most pufferfish"
+      tier: "stone"
+      stat_path: "used.pufferfish"
+      enabled: true
+    
+    most_times_used_cooked_salmon:
+      name: "Salmon Lover"
+      description: "Player who used the most cooked salmon"
+      tier: "stone"
+      stat_path: "used.cooked_salmon"
+      enabled: true
+    
+    most_times_used_cooked_cod:
+      name: "Cod Lover"
+      description: "Player who used the most cooked cod"
+      tier: "stone"
+      stat_path: "used.cooked_cod"
+      enabled: true
+    
+    most_times_used_cooked_beef:
+      name: "Beef Lover"
+      description: "Player who used the most cooked beef"
+      tier: "stone"
+      stat_path: "used.cooked_beef"
+      enabled: true
+    
+    most_times_used_cooked_chicken:
+      name: "Chicken Lover"
+      description: "Player who used the most cooked chicken"
+      tier: "stone"
+      stat_path: "used.cooked_chicken"
+      enabled: true
+    
+    most_times_used_cooked_mutton:
+      name: "Mutton Lover"
+      description: "Player who used the most cooked mutton"
+      tier: "stone"
+      stat_path: "used.cooked_mutton"
+      enabled: true
+    
+    most_times_used_cooked_rabbit:
+      name: "Rabbit Lover"
+      description: "Player who used the most cooked rabbit"
+      tier: "stone"
+      stat_path: "used.cooked_rabbit"
+      enabled: true
+    
+    most_times_used_cooked_porkchop:
+      name: "Porkchop Lover"
+      description: "Player who used the most cooked porkchop"
+      tier: "stone"
+      stat_path: "used.cooked_porkchop"
+      enabled: true
+    
+    most_times_used_baked_potato:
+      name: "Potato Lover"
+      description: "Player who used the most baked potatoes"
+      tier: "stone"
+      stat_path: "used.baked_potato"
+      enabled: true
+    
+    most_times_used_poisonous_potato:
+      name: "Poisonous Potato Eater"
+      description: "Player who used the most poisonous potatoes"
+      tier: "stone"
+      stat_path: "used.poisonous_potato"
+      enabled: true
+    
+    most_times_used_melon_slice:
+      name: "Melon Lover"
+      description: "Player who used the most melon slices"
+      tier: "stone"
+      stat_path: "used.melon_slice"
+      enabled: true
+    
+    most_times_used_beetroot:
+      name: "Beetroot Lover"
+      description: "Player who used the most beetroot"
+      tier: "stone"
+      stat_path: "used.beetroot"
+      enabled: true
+    
+    most_times_used_carrot:
+      name: "Carrot Lover"
+      description: "Player who used the most carrots"
+      tier: "stone"
+      stat_path: "used.carrot"
+      enabled: true
+    
+    most_times_used_potato:
+      name: "Potato Lover"
+      description: "Player who used the most potatoes"
+      tier: "stone"
+      stat_path: "used.potato"
+      enabled: true
+    
+    most_times_used_bread:
+      name: "Bread Lover"
+      description: "Player who used the most bread"
+      tier: "stone"
+      stat_path: "used.bread"
+      enabled: true
+    
+    most_times_used_cake:
+      name: "Cake Lover"
+      description: "Player who used the most cake"
+      tier: "stone"
+      stat_path: "used.cake"
+      enabled: true
+    
+    most_times_used_eye_of_ender:
+      name: "Stronghold Seeker"
+      description: "Player who used eyes of ender the most. The end is near!"
+      tier: "iron"
+      stat_path: "used.ender_eye"
+      enabled: true
+    
+    most_times_used_warped_fungus_on_a_stick:
+      name: "Warped Fungus Rider"
+      description: "Player who used warped fungus on a stick the most"
+      tier: "iron"
+      stat_path: "used.warped_fungus_on_a_stick"
+      enabled: true
+    
+    most_times_used_crimson_fungus_on_a_stick:
+      name: "Crimson Fungus Rider"
+      description: "Player who used crimson fungus on a stick the most"
+      tier: "iron"
+      stat_path: "used.crimson_fungus_on_a_stick"
+      enabled: true
+    
+    most_times_used_advancements:
+      name: "Advancement Hunter"
       description: "Player who completed the most advancements"
       tier: "diamond"
-      stat_path: "advancements.completed"
+      stat_path: "custom.advancements_completed"
+      enabled: true
+    
+    most_times_used_wardens_killed:
+      name: "Warden Slayer"
+      description: "Player who killed the most wardens"
+      tier: "diamond"
+      stat_path: "killed.warden"
+      enabled: true
+    
+    most_times_used_elder_guardians_killed:
+      name: "Elder Guardian Slayer"
+      description: "Player who killed the most elder guardians"
+      tier: "diamond"
+      stat_path: "killed.elder_guardian"
+      enabled: true
+      
+    
+    most_times_used_distance_ridden:
+      name: "Rider"
+      description: "Player who rode the most distance"
+      tier: "stone"
+      stat_path: "custom.horse_one_cm"
+      enabled: true
+    
+    most_beds_broken:
+      name: "Bed Buster"
+      description: "Player who broke the most beds. Sweet dreams!"
+      tier: "stone"
+      stat_path: "broken.bed"
       enabled: true
     
     most_biomes_visited:
       name: "Explorer"
       description: "Player who visited the most biomes"
       tier: "iron"
-      stat_path: "advancements.biomes"
+      stat_path: "custom.biomes_visited"
       enabled: true
     
-    # Time Awards
-    longest_playtime:
-      name: "Dedication"
-      description: "Player with the longest total playtime"
-      tier: "iron"
-      stat_path: "minecraft_custom.play_time"
-      enabled: true
-    
-    most_sleeps:
-      name: "Sleeper"
-      description: "Player who slept the most"
-      tier: "stone"
-      stat_path: "minecraft_custom.sleep_in_bed"
-      enabled: true
-    
-    most_trades:
-      name: "Trader"
-      description: "Player who traded the most with villagers"
-      tier: "iron"
-      stat_path: "minecraft_custom.talked_to_villager"
-      enabled: true
-
-    # --- BEGIN AUTOGENERATED AWARDS ---
-    most_beds_broken:
-      name: "Bed Buster"
-      description: "Player who broke the most beds. Sweet dreams!"
-      tier: "stone"
-      stat_path: "minecraft_broken.bed"
-      enabled: true
-    most_cakes_eaten:
-      name: "Cake Connoisseur"
-      description: "Player who ate the most cake slices. Let them eat cake!"
-      tier: "stone"
-      stat_path: "minecraft_used.cake"
-      enabled: true
-    most_lava_buckets_used:
-      name: "Lava Enthusiast"
-      description: "Player who used the most lava buckets. Hot stuff!"
-      tier: "stone"
-      stat_path: "minecraft_used.lava_bucket"
-      enabled: true
-    most_fire_damage_taken:
-      name: "Fireproof (Not Really)"
-      description: "Player who took the most fire damage. Ouch!"
-      tier: "stone"
-      stat_path: "minecraft_custom.damage_taken.fire"
-      enabled: true
     most_times_burned:
       name: "Pyromaniac"
       description: "Player who caught on fire the most times. Stop, drop, and roll!"
       tier: "stone"
-      stat_path: "minecraft_custom.times_burned"
+      stat_path: "custom.damage_taken"
       enabled: true
+    
     most_times_drowned:
       name: "Aquatic Adventurer"
       description: "Player who drowned the most. Breathe, buddy!"
       tier: "stone"
-      stat_path: "minecraft_custom.times_drowned"
+      stat_path: "custom.deaths"
       enabled: true
+    
     most_times_struck_by_lightning:
       name: "Lightning Rod"
       description: "Player who was struck by lightning the most. Shocking!"
       tier: "iron"
-      stat_path: "minecraft_custom.times_struck_by_lightning"
+      stat_path: "custom.damage_taken"
       enabled: true
-    most_times_eaten_suspicious_stew:
-      name: "Suspicious Gourmet"
-      description: "Player who ate the most suspicious stew. Feeling lucky?"
-      tier: "stone"
-      stat_path: "minecraft_used.suspicious_stew"
-      enabled: true
+    
     most_times_hit_by_anvil:
       name: "Anvil Magnet"
       description: "Player who was hit by anvils the most. Watch your head!"
       tier: "iron"
-      stat_path: "minecraft_custom.times_hit_by_anvil"
+      stat_path: "custom.damage_taken"
       enabled: true
+    
     most_times_fell_from_height:
       name: "Skydiver (No Parachute)"
       description: "Player who fell from great heights the most. Gravity hurts!"
       tier: "stone"
-      stat_path: "minecraft_custom.times_fell_from_height"
+      stat_path: "custom.fall_one_cm"
       enabled: true
+    
     most_times_slept_in_nether:
       name: "Nether Napper"
       description: "Player who tried to sleep in the Nether the most. Boom!"
       tier: "iron"
-      stat_path: "minecraft_custom.slept_in_nether"
+      stat_path: "custom.sleep_in_bed"
       enabled: true
+    
     most_times_traded_with_wandering_trader:
       name: "Wandering Shopper"
       description: "Player who traded the most with wandering traders. Rare deals!"
       tier: "stone"
-      stat_path: "minecraft_custom.traded_with_wandering_trader"
+      stat_path: "custom.traded_with_villager"
       enabled: true
+    
     most_times_ridden_pig:
       name: "Pig Rider"
       description: "Player who rode pigs the most. Oink oink!"
       tier: "stone"
-      stat_path: "minecraft_custom.pig_ridden"
+      stat_path: "custom.pig_one_cm"
       enabled: true
+    
     most_times_ridden_llama:
       name: "Llama Jockey"
       description: "Player who rode llamas the most. Spit happens!"
       tier: "stone"
-      stat_path: "minecraft_custom.llama_ridden"
+      stat_path: "custom.horse_one_cm"
       enabled: true
+    
     most_times_ridden_strider:
       name: "Strider Surfer"
       description: "Player who rode striders the most. Hot feet!"
       tier: "stone"
-      stat_path: "minecraft_custom.strider_ridden"
+      stat_path: "custom.strider_one_cm"
       enabled: true
+    
     most_times_ridden_boat:
       name: "Row Row Row"
       description: "Player who rowed boats the most. Across the seven seas!"
       tier: "stone"
-      stat_path: "minecraft_custom.boat_ridden"
+      stat_path: "custom.boat_one_cm"
       enabled: true
+    
     most_times_ridden_minecart:
       name: "Rollercoaster Tycoon"
       description: "Player who rode minecarts the most. Whee!"
       tier: "stone"
-      stat_path: "minecraft_custom.minecart_ridden"
+      stat_path: "custom.minecart_one_cm"
       enabled: true
+    
     most_times_ridden_horse:
       name: "Horse Whisperer"
       description: "Player who rode horses the most. Giddy up!"
       tier: "stone"
-      stat_path: "minecraft_custom.horse_ridden"
+      stat_path: "custom.horse_one_cm"
       enabled: true
+    
     most_times_ridden_donkey:
       name: "Donkey Driver"
       description: "Player who rode donkeys the most. Hee-haw!"
       tier: "stone"
-      stat_path: "minecraft_custom.donkey_ridden"
+      stat_path: "custom.horse_one_cm"
       enabled: true
+    
     most_times_ridden_mule:
       name: "Mule Master"
       description: "Player who rode mules the most. Stubborn!"
       tier: "stone"
-      stat_path: "minecraft_custom.mule_ridden"
+      stat_path: "custom.horse_one_cm"
       enabled: true
+    
     most_times_ridden_skeleton_horse:
       name: "Spooky Saddle"
       description: "Player who rode skeleton horses the most. Bone to be wild!"
       tier: "iron"
-      stat_path: "minecraft_custom.skeleton_horse_ridden"
+      stat_path: "custom.horse_one_cm"
       enabled: true
+    
     most_times_ridden_zombie_horse:
       name: "Undead Rider"
       description: "Player who rode zombie horses the most. Giddy up, zombie!"
       tier: "iron"
-      stat_path: "minecraft_custom.zombie_horse_ridden"
+      stat_path: "custom.horse_one_cm"
       enabled: true
-    most_times_used_totem:
-      name: "Totem User"
-      description: "Player who used the most Totems of Undying. Not today!"
-      tier: "iron"
-      stat_path: "minecraft_used.totem_of_undying"
-      enabled: true
-    most_times_used_elytra:
-      name: "Sky Glider"
-      description: "Player who used Elytra the most. Soaring high!"
-      tier: "iron"
-      stat_path: "minecraft_custom.elytra_used"
-      enabled: true
-    most_times_used_firework_rocket:
-      name: "Rocket Man"
-      description: "Player who used the most firework rockets. Up, up, and away!"
+    
+    most_fire_damage_taken:
+      name: "Fireproof (Not Really)"
+      description: "Player who took the most fire damage. Ouch!"
       tier: "stone"
-      stat_path: "minecraft_used.firework_rocket"
+      stat_path: "custom.damage_taken"
       enabled: true
-    most_times_used_shield:
-      name: "Shield Blocker"
-      description: "Player who used shields the most. Block it all!"
+    
+    most_times_eaten_suspicious_stew:
+      name: "Suspicious Gourmet"
+      description: "Player who ate the most suspicious stew. Feeling lucky?"
       tier: "stone"
-      stat_path: "minecraft_used.shield"
+      stat_path: "used.suspicious_stew"
       enabled: true
-    most_times_used_crossbow:
-      name: "Crossbow Crafter"
-      description: "Player who used crossbows the most. Pew pew!"
+    
+    most_distance_ridden:
+      name: "Rider"
+      description: "Player who rode the most distance"
       tier: "stone"
-      stat_path: "minecraft_used.crossbow"
+      stat_path: "custom.horse_one_cm"
       enabled: true
-    most_times_used_trident:
-      name: "Trident Thrower"
-      description: "Player who used tridents the most. Poseidon!"
-      tier: "iron"
-      stat_path: "minecraft_used.trident"
-      enabled: true
-    most_times_used_shears:
-      name: "Wool Collector"
-      description: "Player who used shears the most. Snip snip!"
-      tier: "stone"
-      stat_path: "minecraft_used.shears"
-      enabled: true
-    most_times_used_flint_and_steel:
-      name: "Firestarter"
-      description: "Player who used flint and steel the most. Burn baby burn!"
-      tier: "stone"
-      stat_path: "minecraft_used.flint_and_steel"
-      enabled: true
-    most_times_used_bucket:
-      name: "Bucket Brigade"
-      description: "Player who used buckets the most. Splash!"
-      tier: "stone"
-      stat_path: "minecraft_used.bucket"
-      enabled: true
-    most_times_used_milk_bucket:
-      name: "Milk Drinker"
-      description: "Player who used milk buckets the most. Got milk?"
-      tier: "stone"
-      stat_path: "minecraft_used.milk_bucket"
-      enabled: true
-    most_times_used_honey_bottle:
-      name: "Honey Addict"
-      description: "Player who used honey bottles the most. Sweet!"
-      tier: "stone"
-      stat_path: "minecraft_used.honey_bottle"
-      enabled: true
-    most_times_used_lead:
-      name: "Animal Wrangler"
-      description: "Player who used leads the most. Come here!"
-      tier: "stone"
-      stat_path: "minecraft_used.lead"
-      enabled: true
-    most_times_used_name_tag:
-      name: "Name Giver"
-      description: "Player who used name tags the most. Hello, Dinnerbone!"
-      tier: "stone"
-      stat_path: "minecraft_used.name_tag"
-      enabled: true
-    most_times_used_compass:
-      name: "Navigator"
-      description: "Player who used compasses the most. Never lost!"
-      tier: "stone"
-      stat_path: "minecraft_used.compass"
-      enabled: true
-    most_times_used_clock:
-      name: "Timekeeper"
-      description: "Player who used clocks the most. Tick tock!"
-      tier: "stone"
-      stat_path: "minecraft_used.clock"
-      enabled: true
-    most_times_used_map:
-      name: "Cartographer"
-      description: "Player who used maps the most. World explorer!"
-      tier: "stone"
-      stat_path: "minecraft_used.map"
-      enabled: true
-    most_times_used_spyglass:
-      name: "Peeping Tom"
-      description: "Player who used spyglasses the most. I see you!"
-      tier: "stone"
-      stat_path: "minecraft_used.spyglass"
-      enabled: true
-    most_times_used_snowball:
-      name: "Snowball Fighter"
-      description: "Player who used snowballs the most. Winter warfare!"
-      tier: "stone"
-      stat_path: "minecraft_used.snowball"
-      enabled: true
-    most_times_used_ender_pearl:
-      name: "Pearl Jumper"
-      description: "Player who used ender pearls the most. Teleportation master!"
-      tier: "iron"
-      stat_path: "minecraft_used.ender_pearl"
-      enabled: true
-    most_times_used_eye_of_ender:
-      name: "Stronghold Seeker"
-      description: "Player who used eyes of ender the most. The end is near!"
-      tier: "iron"
-      stat_path: "minecraft_used.ender_eye"
-      enabled: true
-    most_times_used_tnt:
-      name: "Demolitionist"
-      description: "Player who used TNT the most. Boom!"
-      tier: "stone"
-      stat_path: "minecraft_used.tnt"
-      enabled: true
-    most_times_used_fire_charge:
-      name: "Pyro Technician"
-      description: "Player who used fire charges the most. Explosive fun!"
-      tier: "stone"
-      stat_path: "minecraft_used.fire_charge"
-      enabled: true
-    most_times_used_bone_meal:
-      name: "Green Thumb"
-      description: "Player who used bone meal the most. Grow, grow, grow!"
-      tier: "stone"
-      stat_path: "minecraft_used.bone_meal"
-      enabled: true
-    most_times_used_bow:
-      name: "Bowman"
-      description: "Player who used bows the most. Bullseye!"
-      tier: "stone"
-      stat_path: "minecraft_used.bow"
-      enabled: true
-    most_times_used_potion:
-      name: "Potion Brewer"
-      description: "Player who used potions the most. Magic in a bottle!"
-      tier: "stone"
-      stat_path: "minecraft_used.potion"
-      enabled: true
-    most_times_used_experience_bottle:
-      name: "XP Splash"
-      description: "Player who used experience bottles the most. Level up!"
-      tier: "stone"
-      stat_path: "minecraft_used.experience_bottle"
-      enabled: true
-    most_times_used_totem_of_undying:
-      name: "Immortal"
-      description: "Player who used the most Totems of Undying. Death? Never heard of it!"
-      tier: "diamond"
-      stat_path: "minecraft_used.totem_of_undying"
-      enabled: true
-    most_times_used_enchanted_golden_apple:
-      name: "Notch's Favorite"
-      description: "Player who used the most enchanted golden apples. Overpowered!"
-      tier: "diamond"
-      stat_path: "minecraft_used.enchanted_golden_apple"
-      enabled: true
-    most_times_used_golden_apple:
-      name: "Golden Apple Eater"
-      description: "Player who used the most golden apples. Healthy diet!"
-      tier: "iron"
-      stat_path: "minecraft_used.golden_apple"
-      enabled: true
-    most_times_used_golden_carrot:
-      name: "Golden Carrot Cruncher"
-      description: "Player who used the most golden carrots. Bunny approved!"
-      tier: "stone"
-      stat_path: "minecraft_used.golden_carrot"
-      enabled: true
-    most_times_used_carrot_on_a_stick:
-      name: "Pig Motivator"
-      description: "Player who used carrot on a stick the most. Go, pig, go!"
-      tier: "stone"
-      stat_path: "minecraft_used.carrot_on_a_stick"
-      enabled: true
-    most_times_used_warped_fungus_on_a_stick:
-      name: "Strider Motivator"
-      description: "Player who used warped fungus on a stick the most. Strider speed!"
-      tier: "stone"
-      stat_path: "minecraft_used.warped_fungus_on_a_stick"
-      enabled: true
-    most_times_used_saddle:
-      name: "Saddle Up"
-      description: "Player who used saddles the most. Ride on!"
-      tier: "stone"
-      stat_path: "minecraft_used.saddle"
-      enabled: true
-    most_times_used_elytra_in_nether:
-      name: "Nether Flyer"
-      description: "Player who used Elytra in the Nether the most. Dangerous skies!"
-      tier: "diamond"
-      stat_path: "minecraft_custom.elytra_used_in_nether"
-      enabled: true
-    most_times_used_elytra_in_end:
-      name: "End Flyer"
-      description: "Player who used Elytra in the End the most. Watch out for void!"
-      tier: "diamond"
-      stat_path: "minecraft_custom.elytra_used_in_end"
-      enabled: true
-    most_times_used_elytra_in_overworld:
-      name: "Overworld Flyer"
-      description: "Player who used Elytra in the Overworld the most. Free as a bird!"
-      tier: "iron"
-      stat_path: "minecraft_custom.elytra_used_in_overworld"
-      enabled: true
-    most_times_used_bell:
-      name: "Bell Ringer"
-      description: "Player who used bells the most. Ding dong!"
-      tier: "stone"
-      stat_path: "minecraft_used.bell"
-      enabled: true
-    most_times_used_note_block:
-      name: "Musician"
-      description: "Player who used note blocks the most. Play that tune!"
-      tier: "stone"
-      stat_path: "minecraft_used.note_block"
-      enabled: true
-    most_times_used_jukebox:
-      name: "DJ"
-      description: "Player who used jukeboxes the most. Drop the beat!"
-      tier: "stone"
-      stat_path: "minecraft_used.jukebox"
-      enabled: true
-    most_times_used_record:
-      name: "Record Collector"
-      description: "Player who used music discs the most. Groovy!"
-      tier: "stone"
-      stat_path: "minecraft_used.music_disc"
-      enabled: true
-    most_times_used_banner:
-      name: "Banner Waver"
-      description: "Player who used banners the most. Show your colors!"
-      tier: "stone"
-      stat_path: "minecraft_used.banner"
-      enabled: true
-    most_times_used_shulker_box:
-      name: "Shulker Stasher"
-      description: "Player who used shulker boxes the most. So much storage!"
-      tier: "iron"
-      stat_path: "minecraft_used.shulker_box"
-      enabled: true
-    most_times_used_ender_chest:
-      name: "Ender Hoarder"
-      description: "Player who used ender chests the most. Interdimensional storage!"
-      tier: "iron"
-      stat_path: "minecraft_used.ender_chest"
-      enabled: true
-    most_times_used_beacon:
-      name: "Beacon Builder"
-      description: "Player who used beacons the most. Shine bright!"
-      tier: "diamond"
-      stat_path: "minecraft_used.beacon"
-      enabled: true
-    most_times_used_dragon_breath:
-      name: "Dragon's Breath"
-      description: "Player who used dragon's breath the most. Smells... interesting!"
-      tier: "diamond"
-      stat_path: "minecraft_used.dragon_breath"
-      enabled: true
-    most_times_used_conduit:
-      name: "Conduit Commander"
-      description: "Player who used conduits the most. Underwater power!"
-      tier: "diamond"
-      stat_path: "minecraft_used.conduit"
-      enabled: true
-    most_times_used_turtle_helmet:
-      name: "Turtle Power"
-      description: "Player who used turtle helmets the most. Cowabunga!"
-      tier: "stone"
-      stat_path: "minecraft_used.turtle_helmet"
-      enabled: true
-    most_times_used_phantom_membrane:
-      name: "Phantom Fixer"
-      description: "Player who used phantom membranes the most. Elytra repair!"
-      tier: "stone"
-      stat_path: "minecraft_used.phantom_membrane"
-      enabled: true
-    most_times_used_nether_star:
-      name: "Star Power"
-      description: "Player who used nether stars the most. Ultimate trophy!"
-      tier: "diamond"
-      stat_path: "minecraft_used.nether_star"
-      enabled: true
-    most_times_used_totem_of_undying_in_nether:
-      name: "Nether Immortal"
-      description: "Player who used Totems of Undying in the Nether the most. Hardcore!"
-      tier: "diamond"
-      stat_path: "minecraft_custom.totem_of_undying_used_in_nether"
-      enabled: true
-    most_times_used_totem_of_undying_in_end:
-      name: "End Immortal"
-      description: "Player who used Totems of Undying in the End the most. Hardcore!"
-      tier: "diamond"
-      stat_path: "minecraft_custom.totem_of_undying_used_in_end"
-      enabled: true
-    most_times_used_totem_of_undying_in_overworld:
-      name: "Overworld Immortal"
-      description: "Player who used Totems of Undying in the Overworld the most. Hardcore!"
-      tier: "iron"
-      stat_path: "minecraft_custom.totem_of_undying_used_in_overworld"
-      enabled: true
-    most_times_used_suspicious_stew:
-      name: "Suspicious Stew Addict"
-      description: "Player who used suspicious stew the most. Feeling lucky?"
-      tier: "stone"
-      stat_path: "minecraft_used.suspicious_stew"
-      enabled: true
-    most_times_used_pufferfish:
-      name: "Risky Eater"
-      description: "Player who used pufferfish the most. Dangerous delicacy!"
-      tier: "iron"
-      stat_path: "minecraft_used.pufferfish"
-      enabled: true
-    most_times_used_rabbit_stew:
-      name: "Rabbit Stew Chef"
-      description: "Player who used rabbit stew the most. Gourmet!"
-      tier: "stone"
-      stat_path: "minecraft_used.rabbit_stew"
-      enabled: true
-    most_times_used_beetroot_soup:
-      name: "Beetroot Soup Chef"
-      description: "Player who used beetroot soup the most. Healthy choice!"
-      tier: "stone"
-      stat_path: "minecraft_used.beetroot_soup"
-      enabled: true
-    most_times_used_mushroom_stew:
-      name: "Mushroom Stew Chef"
-      description: "Player who used mushroom stew the most. Fungi fan!"
-      tier: "stone"
-      stat_path: "minecraft_used.mushroom_stew"
-      enabled: true
-    most_times_used_sweet_berries:
-      name: "Berry Eater"
-      description: "Player who used sweet berries the most. Berry good!"
-      tier: "stone"
-      stat_path: "minecraft_used.sweet_berries"
-      enabled: true
-    most_times_used_glow_berries:
-      name: "Glow Berry Eater"
-      description: "Player who used glow berries the most. Light snack!"
-      tier: "stone"
-      stat_path: "minecraft_used.glow_berries"
-      enabled: true
-    most_times_used_cooked_cod:
-      name: "Cod Consumer"
-      description: "Player who used cooked cod the most. Fishy business!"
-      tier: "stone"
-      stat_path: "minecraft_used.cooked_cod"
-      enabled: true
-    most_times_used_cooked_salmon:
-      name: "Salmon Consumer"
-      description: "Player who used cooked salmon the most. Fishy business!"
-      tier: "stone"
-      stat_path: "minecraft_used.cooked_salmon"
-      enabled: true
-    most_times_used_cooked_porkchop:
-      name: "Porkchop Consumer"
-      description: "Player who used cooked porkchop the most. Oink!"
-      tier: "stone"
-      stat_path: "minecraft_used.cooked_porkchop"
-      enabled: true
-    most_times_used_cooked_beef:
-      name: "Steak Consumer"
-      description: "Player who used cooked beef the most. Moo!"
-      tier: "stone"
-      stat_path: "minecraft_used.cooked_beef"
-      enabled: true
-    most_times_used_cooked_chicken:
-      name: "Chicken Consumer"
-      description: "Player who used cooked chicken the most. Cluck!"
-      tier: "stone"
-      stat_path: "minecraft_used.cooked_chicken"
-      enabled: true
-    most_times_used_cooked_mutton:
-      name: "Mutton Consumer"
-      description: "Player who used cooked mutton the most. Baa!"
-      tier: "stone"
-      stat_path: "minecraft_used.cooked_mutton"
-      enabled: true
-    most_times_used_cooked_rabbit:
-      name: "Rabbit Consumer"
-      description: "Player who used cooked rabbit the most. Hop to it!"
-      tier: "stone"
-      stat_path: "minecraft_used.cooked_rabbit"
-      enabled: true
-    most_times_used_baked_potato:
-      name: "Baked Potato Eater"
-      description: "Player who used baked potatoes the most. Spudtacular!"
-      tier: "stone"
-      stat_path: "minecraft_used.baked_potato"
-      enabled: true
-    most_times_used_poisonous_potato:
-      name: "Risky Potato Eater"
-      description: "Player who used poisonous potatoes the most. Feeling lucky?"
-      tier: "iron"
-      stat_path: "minecraft_used.poisonous_potato"
-      enabled: true
-    most_times_used_pumpkin_pie:
-      name: "Pumpkin Pie Eater"
-      description: "Player who used pumpkin pie the most. Tasty treat!"
-      tier: "stone"
-      stat_path: "minecraft_used.pumpkin_pie"
-      enabled: true
-    most_times_used_cookie:
-      name: "Cookie Monster"
-      description: "Player who used cookies the most. Om nom nom!"
-      tier: "stone"
-      stat_path: "minecraft_used.cookie"
-      enabled: true
-    most_times_used_cake:
-      name: "Cake Lover"
-      description: "Player who used cake the most. Let them eat cake!"
-      tier: "stone"
-      stat_path: "minecraft_used.cake"
-      enabled: true
-    most_times_used_apple:
-      name: "Apple Eater"
-      description: "Player who used apples the most. An apple a day!"
-      tier: "stone"
-      stat_path: "minecraft_used.apple"
-      enabled: true
-    most_times_used_melon_slice:
-      name: "Melon Eater"
-      description: "Player who used melon slices the most. Juicy!"
-      tier: "stone"
-      stat_path: "minecraft_used.melon_slice"
-      enabled: true
-    most_times_used_carrot:
-      name: "Carrot Eater"
-      description: "Player who used carrots the most. Bunny food!"
-      tier: "stone"
-      stat_path: "minecraft_used.carrot"
-      enabled: true
-    most_times_used_beetroot:
-      name: "Beetroot Eater"
-      description: "Player who used beetroots the most. Root for beets!"
-      tier: "stone"
-      stat_path: "minecraft_used.beetroot"
-      enabled: true
-    most_times_used_potato:
-      name: "Potato Eater"
-      description: "Player who used potatoes the most. Spud life!"
-      tier: "stone"
-      stat_path: "minecraft_used.potato"
-      enabled: true
-    most_times_used_sugar:
-      name: "Sugar Rush"
-      description: "Player who used sugar the most. Sweet tooth!"
-      tier: "stone"
-      stat_path: "minecraft_used.sugar"
-      enabled: true
-    most_times_used_bread:
-      name: "Bread Eater"
-      description: "Player who used bread the most. Carbs!"
-      tier: "stone"
-      stat_path: "minecraft_used.bread"
-      enabled: true
-    most_times_used_milk_bucket:
-      name: "Milk Chugger"
-      description: "Player who used milk buckets the most. Calcium boost!"
-      tier: "stone"
-      stat_path: "minecraft_used.milk_bucket"
-      enabled: true
-    most_times_used_honey_bottle:
-      name: "Honey Chugger"
-      description: "Player who used honey bottles the most. Sweet!"
-      tier: "stone"
-      stat_path: "minecraft_used.honey_bottle"
-      enabled: true
-    most_times_used_suspicious_stew:
-      name: "Suspicious Stew Chugger"
-      description: "Player who used suspicious stew the most. Feeling lucky?"
-      tier: "stone"
-      stat_path: "minecraft_used.suspicious_stew"
-      enabled: true
-    most_times_used_rabbit_stew:
-      name: "Rabbit Stew Chugger"
-      description: "Player who used rabbit stew the most. Gourmet!"
-      tier: "stone"
-      stat_path: "minecraft_used.rabbit_stew"
-      enabled: true
-    most_times_used_beetroot_soup:
-      name: "Beetroot Soup Chugger"
-      description: "Player who used beetroot soup the most. Healthy choice!"
-      tier: "stone"
-      stat_path: "minecraft_used.beetroot_soup"
-      enabled: true
-    most_times_used_mushroom_stew:
-      name: "Mushroom Stew Chugger"
-      description: "Player who used mushroom stew the most. Fungi fan!"
-      tier: "stone"
-      stat_path: "minecraft_used.mushroom_stew"
-      enabled: true
-    # ... (continue with hundreds more awards in this style, covering all vanilla stats, fun/joke/rare events, and creative names/descriptions/tier/stat_path combinations) ...
-    # --- END AUTOGENERATED AWARDS ---
 
-# Webhook Configuration
-webhooks:
-  enabled: false
-  discord_webhook_url: "https://discord.com/api/webhooks/your-webhook-url"
-  award_announcements: true
-  medal_change_notifications: true
-  milestone_notifications: true
+achievements:
+  time_lord:
+    name: "Time Lord"
+    description: "Accumulate playtime on the server"
+    stat: "minecraft:custom.minecraft:play_time"
+    color: "#f59e0b"
+    type: "player"
+    tiers:
+      1:
+        name: "Newcomer"
+        description: "1 hour of playtime"
+        threshold: 72000
+        icon: "⏰"
+        points: 50
+      2:
+        name: "Regular"
+        description: "10 hours of playtime"
+        threshold: 720000
+        icon: "⏰"
+        points: 100
+      3:
+        name: "Dedicated"
+        description: "50 hours of playtime"
+        threshold: 3600000
+        icon: "⏰"
+        points: 150
+      4:
+        name: "Veteran"
+        description: "100 hours of playtime"
+        threshold: 7200000
+        icon: "⏰"
+        points: 200
+      5:
+        name: "Loyal"
+        description: "450 hours of playtime"
+        threshold: 32400000
+        icon: "⏰"
+        points: 250
+      6:
+        name: "Time Lord"
+        description: "900 hours of playtime"
+        threshold: 64800000
+        icon: "⏰"
+        points: 300
+  master_builder:
+    name: "Master Builder"
+    description: "Place blocks to build amazing structures"
+    stat: "minecraft:used.minecraft:dirt"
+    color: "#3b82f6"
+    type: "player"
+    tiers:
+      1:
+        name: "Builder"
+        description: "1,000 blocks placed"
+        threshold: 1000
+        icon: "🏗️"
+        points: 50
+      2:
+        name: "Constructor"
+        description: "5,000 blocks placed"
+        threshold: 5000
+        icon: "🏗️"
+        points: 100
+      3:
+        name: "Engineer"
+        description: "25,000 blocks placed"
+        threshold: 25000
+        icon: "🏗️"
+        points: 150
+      4:
+        name: "Master Builder"
+        description: "100,000 blocks placed"
+        threshold: 100000
+        icon: "🏗️"
+        points: 200
+      5:
+        name: "Architect"
+        description: "500,000 blocks placed"
+        threshold: 500000
+        icon: "🏗️"
+        points: 250
+  excavator:
+    name: "Excavator"
+    description: "Break blocks to gather resources"
+    stat: "minecraft:mined.minecraft:stone"
+    color: "#8b5cf6"
+    type: "player"
+    tiers:
+      1:
+        name: "Digger"
+        description: "1,000 blocks broken"
+        threshold: 1000
+        icon: "⛏️"
+        points: 50
+      2:
+        name: "Miner"
+        description: "5,000 blocks broken"
+        threshold: 5000
+        icon: "⛏️"
+        points: 100
+      3:
+        name: "Quarryman"
+        description: "25,000 blocks broken"
+        threshold: 25000
+        icon: "⛏️"
+        points: 150
+      4:
+        name: "Strip Miner"
+        description: "100,000 blocks broken"
+        threshold: 100000
+        icon: "⛏️"
+        points: 200
+      5:
+        name: "Excavator"
+        description: "500,000 blocks broken"
+        threshold: 500000
+        icon: "⛏️"
+        points: 250
+  boat_captain:
+    name: "Boat Captain"
+    description: "Navigate the seas and waterways"
+    stat: "minecraft:custom.minecraft:boat_one_cm"
+    color: "#06b6d4"
+    type: "player"
+    tiers:
+      1:
+        name: "Sailor"
+        description: "1km traveled by boat"
+        threshold: 100000
+        icon: "⛵"
+        points: 50
+      2:
+        name: "Navigator"
+        description: "5km traveled by boat"
+        threshold: 500000
+        icon: "⛵"
+        points: 100
+      3:
+        name: "Seafarer"
+        description: "25km traveled by boat"
+        threshold: 2500000
+        icon: "⛵"
+        points: 150
+      4:
+        name: "Admiral"
+        description: "100km traveled by boat"
+        threshold: 10000000
+        icon: "⛵"
+        points: 200
+      5:
+        name: "Boat Captain"
+        description: "500km traveled by boat"
+        threshold: 50000000
+        icon: "⛵"
+        points: 250
+
+  # Log Cutting Achievements
+  oak_logger:
+    name: "Oak Logger"
+    description: "Master of oak wood harvesting"
+    stat: "minecraft:mined.minecraft:oak_log"
+    color: "#8b4513"
+    type: "player"
+    tiers:
+      1:
+        name: "Oak Cutter"
+        description: "100 oak logs"
+        threshold: 100
+        icon: "🪵"
+        points: 50
+      2:
+        name: "Oak Harvester"
+        description: "500 oak logs"
+        threshold: 500
+        icon: "🪵"
+        points: 100
+      3:
+        name: "Oak Master"
+        description: "1,000 oak logs"
+        threshold: 1000
+        icon: "🪵"
+        points: 200
+
+  spruce_logger:
+    name: "Spruce Logger"
+    description: "Master of spruce wood harvesting"
+    stat: "minecraft:mined.minecraft:spruce_log"
+    color: "#654321"
+    type: "player"
+    tiers:
+      1:
+        name: "Spruce Cutter"
+        description: "100 spruce logs"
+        threshold: 100
+        icon: "🪵"
+        points: 50
+      2:
+        name: "Spruce Harvester"
+        description: "500 spruce logs"
+        threshold: 500
+        icon: "🪵"
+        points: 100
+      3:
+        name: "Spruce Master"
+        description: "1,000 spruce logs"
+        threshold: 1000
+        icon: "🪵"
+        points: 200
+
+  birch_logger:
+    name: "Birch Logger"
+    description: "Master of birch wood harvesting"
+    stat: "minecraft:mined.minecraft:birch_log"
+    color: "#f5deb3"
+    type: "player"
+    tiers:
+      1:
+        name: "Birch Cutter"
+        description: "100 birch logs"
+        threshold: 100
+        icon: "🪵"
+        points: 50
+      2:
+        name: "Birch Harvester"
+        description: "500 birch logs"
+        threshold: 500
+        icon: "🪵"
+        points: 100
+      3:
+        name: "Birch Master"
+        description: "1,000 birch logs"
+        threshold: 1000
+        icon: "🪵"
+        points: 200
+
+  jungle_logger:
+    name: "Jungle Logger"
+    description: "Master of jungle wood harvesting"
+    stat: "minecraft:mined.minecraft:jungle_log"
+    color: "#228b22"
+    type: "player"
+    tiers:
+      1:
+        name: "Jungle Cutter"
+        description: "100 jungle logs"
+        threshold: 100
+        icon: "🪵"
+        points: 50
+      2:
+        name: "Jungle Harvester"
+        description: "500 jungle logs"
+        threshold: 500
+        icon: "🪵"
+        points: 100
+      3:
+        name: "Jungle Master"
+        description: "1,000 jungle logs"
+        threshold: 1000
+        icon: "🪵"
+        points: 200
+
+  acacia_logger:
+    name: "Acacia Logger"
+    description: "Master of acacia wood harvesting"
+    stat: "minecraft:mined.minecraft:acacia_log"
+    color: "#daa520"
+    type: "player"
+    tiers:
+      1:
+        name: "Acacia Cutter"
+        description: "100 acacia logs"
+        threshold: 100
+        icon: "🪵"
+        points: 50
+      2:
+        name: "Acacia Harvester"
+        description: "500 acacia logs"
+        threshold: 500
+        icon: "🪵"
+        points: 100
+      3:
+        name: "Acacia Master"
+        description: "1,000 acacia logs"
+        threshold: 1000
+        icon: "🪵"
+        points: 200
+
+  dark_oak_logger:
+    name: "Dark Oak Logger"
+    description: "Master of dark oak wood harvesting"
+    stat: "minecraft:mined.minecraft:dark_oak_log"
+    color: "#2f4f4f"
+    type: "player"
+    tiers:
+      1:
+        name: "Dark Oak Cutter"
+        description: "100 dark oak logs"
+        threshold: 100
+        icon: "🪵"
+        points: 50
+      2:
+        name: "Dark Oak Harvester"
+        description: "500 dark oak logs"
+        threshold: 500
+        icon: "🪵"
+        points: 100
+      3:
+        name: "Dark Oak Master"
+        description: "1,000 dark oak logs"
+        threshold: 1000
+        icon: "🪵"
+        points: 200
+
+  mangrove_logger:
+    name: "Mangrove Logger"
+    description: "Master of mangrove wood harvesting"
+    stat: "minecraft:mined.minecraft:mangrove_log"
+    color: "#8b4513"
+    type: "player"
+    tiers:
+      1:
+        name: "Mangrove Cutter"
+        description: "100 mangrove logs"
+        threshold: 100
+        icon: "🪵"
+        points: 50
+      2:
+        name: "Mangrove Harvester"
+        description: "500 mangrove logs"
+        threshold: 500
+        icon: "🪵"
+        points: 100
+      3:
+        name: "Mangrove Master"
+        description: "1,000 mangrove logs"
+        threshold: 1000
+        icon: "🪵"
+        points: 200
+
+  cherry_logger:
+    name: "Cherry Logger"
+    description: "Master of cherry wood harvesting"
+    stat: "minecraft:mined.minecraft:cherry_log"
+    color: "#ff69b4"
+    type: "player"
+    tiers:
+      1:
+        name: "Cherry Cutter"
+        description: "100 cherry logs"
+        threshold: 100
+        icon: "🪵"
+        points: 50
+      2:
+        name: "Cherry Harvester"
+        description: "500 cherry logs"
+        threshold: 500
+        icon: "🪵"
+        points: 100
+      3:
+        name: "Cherry Master"
+        description: "1,000 cherry logs"
+        threshold: 1000
+        icon: "🪵"
+        points: 200
+
+  bamboo_logger:
+    name: "Bamboo Logger"
+    description: "Master of bamboo harvesting"
+    stat: "minecraft:mined.minecraft:bamboo"
+    color: "#90ee90"
+    type: "player"
+    tiers:
+      1:
+        name: "Bamboo Cutter"
+        description: "100 bamboo"
+        threshold: 100
+        icon: "🎋"
+        points: 50
+      2:
+        name: "Bamboo Harvester"
+        description: "500 bamboo"
+        threshold: 500
+        icon: "🎋"
+        points: 100
+      3:
+        name: "Bamboo Master"
+        description: "1,000 bamboo"
+        threshold: 1000
+        icon: "🎋"
+        points: 200
+
+  # Combat Achievements
+  warrior:
+    name: "Warrior"
+    description: "Player with the highest kill count"
+    stat: "minecraft:custom.minecraft:mob_kills"
+    color: "#ef4444"
+    type: "player"
+    tiers:
+      1:
+        name: "Fighter"
+        description: "50 kills"
+        threshold: 50
+        icon: "⚔️"
+        points: 25
+      2:
+        name: "Warrior"
+        description: "200 kills"
+        threshold: 200
+        icon: "⚔️"
+        points: 50
+      3:
+        name: "Champion"
+        description: "500 kills"
+        threshold: 500
+        icon: "⚔️"
+        points: 75
+      4:
+        name: "Hero"
+        description: "1,000 kills"
+        threshold: 1000
+        icon: "⚔️"
+        points: 100
+      5:
+        name: "Legend"
+        description: "2,500 kills"
+        threshold: 2500
+        icon: "⚔️"
+        points: 150
+      6:
+        name: "Mythic"
+        description: "5,000 kills"
+        threshold: 5000
+        icon: "⚔️"
+        points: 200
+
+  cannon_fodder:
+    name: "Cannon Fodder"
+    description: "Player with the highest death count"
+    stat: "minecraft:custom.minecraft:deaths"
+    color: "#dc2626"
+    type: "player"
+    tiers:
+      1:
+        name: "Casualty"
+        description: "50 deaths"
+        threshold: 50
+        icon: "💀"
+        points: 25
+      2:
+        name: "Cannon Fodder"
+        description: "500 deaths"
+        threshold: 500
+        icon: "💀"
+        points: 50
+      3:
+        name: "Sacrifice"
+        description: "2,500 deaths"
+        threshold: 2500
+        icon: "💀"
+        points: 100
+
+  damage_dealer:
+    name: "Damage Dealer"
+    description: "Player who dealt the most damage"
+    stat: "minecraft:custom.minecraft:damage_dealt"
+    color: "#f97316"
+    type: "player"
+    tiers:
+      1:
+        name: "Striker"
+        description: "10,000 damage dealt"
+        threshold: 10000
+        icon: "🗡️"
+        points: 100
+      2:
+        name: "Damage Dealer"
+        description: "100,000 damage dealt"
+        threshold: 100000
+        icon: "🗡️"
+        points: 200
+      3:
+        name: "Annihilator"
+        description: "1,000,000 damage dealt"
+        threshold: 1000000
+        icon: "🗡️"
+        points: 400
+
+  shield_master:
+    name: "Shield Master"
+    description: "Player who blocked the most damage with shield"
+    stat: "minecraft:custom.minecraft:damage_blocked_by_shield"
+    color: "#6366f1"
+    type: "player"
+    tiers:
+      1:
+        name: "Defender"
+        description: "1,000 damage blocked"
+        threshold: 1000
+        icon: "🛡️"
+        points: 100
+      2:
+        name: "Shield Master"
+        description: "10,000 damage blocked"
+        threshold: 10000
+        icon: "🛡️"
+        points: 200
+      3:
+        name: "Guardian"
+        description: "100,000 damage blocked"
+        threshold: 100000
+        icon: "🛡️"
+        points: 400
+
+  survivor:
+    name: "Survivor"
+    description: "Player with the longest time since death"
+    stat: "minecraft:custom.minecraft:time_since_death"
+    color: "#10b981"
+    type: "player"
+    tiers:
+      1:
+        name: "Survivor"
+        description: "1 hour without death"
+        threshold: 72000
+        icon: "⏰"
+        points: 100
+      2:
+        name: "Immortal"
+        description: "24 hours without death"
+        threshold: 1728000
+        icon: "⏰"
+        points: 200
+      3:
+        name: "Legend"
+        description: "7 days without death"
+        threshold: 12096000
+        icon: "⏰"
+        points: 400
+
+  # Movement Achievements
+  wanderer:
+    name: "Wanderer"
+    description: "Player who walked the farthest"
+    stat: "minecraft:custom.minecraft:walk_one_cm"
+    color: "#8b5cf6"
+    type: "player"
+    tiers:
+      1:
+        name: "Walker"
+        description: "1km walked"
+        threshold: 100000
+        icon: "🚶"
+        points: 50
+      2:
+        name: "Wanderer"
+        description: "10km walked"
+        threshold: 1000000
+        icon: "🚶"
+        points: 100
+      3:
+        name: "Explorer"
+        description: "100km walked"
+        threshold: 10000000
+        icon: "🚶"
+        points: 200
+
+  speed_demon:
+    name: "Speed Demon"
+    description: "Player who sprinted the farthest"
+    stat: "minecraft:custom.minecraft:sprint_one_cm"
+    color: "#f59e0b"
+    type: "player"
+    tiers:
+      1:
+        name: "Runner"
+        description: "1km sprinted"
+        threshold: 100000
+        icon: "🏃"
+        points: 50
+      2:
+        name: "Speed Demon"
+        description: "10km sprinted"
+        threshold: 1000000
+        icon: "🏃"
+        points: 100
+      3:
+        name: "Flash"
+        description: "100km sprinted"
+        threshold: 10000000
+        icon: "🏃"
+        points: 200
+
+  swimmer:
+    name: "Swimmer"
+    description: "Player who swam the farthest"
+    stat: "minecraft:custom.minecraft:swim_one_cm"
+    color: "#06b6d4"
+    type: "player"
+    tiers:
+      1:
+        name: "Swimmer"
+        description: "1km swam"
+        threshold: 100000
+        icon: "🏊"
+        points: 50
+      2:
+        name: "Dolphin"
+        description: "10km swam"
+        threshold: 1000000
+        icon: "🏊"
+        points: 100
+      3:
+        name: "Mermaid"
+        description: "100km swam"
+        threshold: 10000000
+        icon: "🏊"
+        points: 200
+
+  bird:
+    name: "Bird"
+    description: "Player who flew the farthest"
+    stat: "minecraft:custom.minecraft:fly_one_cm"
+    color: "#3b82f6"
+    type: "player"
+    tiers:
+      1:
+        name: "Flyer"
+        description: "1km flown"
+        threshold: 100000
+        icon: "🦅"
+        points: 100
+      2:
+        name: "Bird"
+        description: "10km flown"
+        threshold: 1000000
+        icon: "🦅"
+        points: 200
+      3:
+        name: "Eagle"
+        description: "100km flown"
+        threshold: 10000000
+        icon: "🦅"
+        points: 400
+
+  bunny:
+    name: "Bunny"
+    description: "Player who jumped the most"
+    stat: "minecraft:custom.minecraft:jump"
+    color: "#ec4899"
+    type: "player"
+    tiers:
+      1:
+        name: "Jumper"
+        description: "1,000 jumps"
+        threshold: 1000
+        icon: "🐰"
+        points: 50
+      2:
+        name: "Bunny"
+        description: "10,000 jumps"
+        threshold: 10000
+        icon: "🐰"
+        points: 100
+      3:
+        name: "Kangaroo"
+        description: "100,000 jumps"
+        threshold: 100000
+        icon: "🐰"
+        points: 200
+
+  # Mining Achievements
+  miner:
+    name: "Miner"
+    description: "Player who mined the most blocks"
+    stat: "minecraft:mined.minecraft:stone"
+    color: "#8b5cf6"
+    type: "player"
+    tiers:
+      1:
+        name: "Digger"
+        description: "1,000 blocks mined"
+        threshold: 1000
+        icon: "⛏️"
+        points: 50
+      2:
+        name: "Miner"
+        description: "10,000 blocks mined"
+        threshold: 10000
+        icon: "⛏️"
+        points: 100
+      3:
+        name: "Excavator"
+        description: "100,000 blocks mined"
+        threshold: 100000
+        icon: "⛏️"
+        points: 200
+
+  diamond_hunter:
+    name: "Diamond Hunter"
+    description: "Player who mined the most diamonds"
+    stat: "minecraft:mined.minecraft:diamond_ore"
+    color: "#6366f1"
+    type: "player"
+    tiers:
+      1:
+        name: "Gem Seeker"
+        description: "10 diamond ore"
+        threshold: 10
+        icon: "💎"
+        points: 200
+      2:
+        name: "Diamond Hunter"
+        description: "100 diamond ore"
+        threshold: 100
+        icon: "💎"
+        points: 400
+      3:
+        name: "Diamond King"
+        description: "1,000 diamond ore"
+        threshold: 1000
+        icon: "💎"
+        points: 600
+
+  iron_miner:
+    name: "Iron Miner"
+    description: "Player who mined the most iron"
+    stat: "minecraft:mined.minecraft:iron_ore"
+    color: "#6b7280"
+    type: "player"
+    tiers:
+      1:
+        name: "Iron Digger"
+        description: "100 iron ore"
+        threshold: 100
+        icon: "⛏️"
+        points: 50
+      2:
+        name: "Iron Miner"
+        description: "1,000 iron ore"
+        threshold: 1000
+        icon: "⛏️"
+        points: 100
+      3:
+        name: "Iron Baron"
+        description: "10,000 iron ore"
+        threshold: 10000
+        icon: "⛏️"
+        points: 200
+
+  coal_miner:
+    name: "Coal Miner"
+    description: "Player who mined the most coal"
+    stat: "minecraft:mined.minecraft:coal_ore"
+    color: "#374151"
+    type: "player"
+    tiers:
+      1:
+        name: "Coal Digger"
+        description: "500 coal ore"
+        threshold: 500
+        icon: "⛏️"
+        points: 50
+      2:
+        name: "Coal Miner"
+        description: "5,000 coal ore"
+        threshold: 5000
+        icon: "⛏️"
+        points: 100
+      3:
+        name: "Coal Baron"
+        description: "50,000 coal ore"
+        threshold: 50000
+        icon: "⛏️"
+        points: 200
+
+  gold_digger:
+    name: "Gold Digger"
+    description: "Player who mined the most gold"
+    stat: "minecraft:mined.minecraft:gold_ore"
+    color: "#f59e0b"
+    type: "player"
+    tiers:
+      1:
+        name: "Gold Seeker"
+        description: "50 gold ore"
+        threshold: 50
+        icon: "⛏️"
+        points: 100
+      2:
+        name: "Gold Digger"
+        description: "500 gold ore"
+        threshold: 500
+        icon: "⛏️"
+        points: 200
+      3:
+        name: "Gold Baron"
+        description: "5,000 gold ore"
+        threshold: 5000
+        icon: "⛏️"
+        points: 400
+
+  emerald_hunter:
+    name: "Emerald Hunter"
+    description: "Player who mined the most emeralds"
+    stat: "minecraft:mined.minecraft:emerald_ore"
+    color: "#10b981"
+    type: "player"
+    tiers:
+      1:
+        name: "Emerald Seeker"
+        description: "25 emerald ore"
+        threshold: 25
+        icon: "💎"
+        points: 100
+      2:
+        name: "Emerald Hunter"
+        description: "250 emerald ore"
+        threshold: 250
+        icon: "💎"
+        points: 200
+      3:
+        name: "Emerald Baron"
+        description: "2,500 emerald ore"
+        threshold: 2500
+        icon: "💎"
+        points: 400
+
+  netherite_hunter:
+    name: "Netherite Hunter"
+    description: "Player who mined the most ancient debris"
+    stat: "minecraft:mined.minecraft:ancient_debris"
+    color: "#dc2626"
+    type: "player"
+    tiers:
+      1:
+        name: "Debris Finder"
+        description: "10 ancient debris"
+        threshold: 10
+        icon: "💎"
+        points: 300
+      2:
+        name: "Netherite Hunter"
+        description: "100 ancient debris"
+        threshold: 100
+        icon: "💎"
+        points: 600
+      3:
+        name: "Netherite King"
+        description: "1,000 ancient debris"
+        threshold: 1000
+        icon: "💎"
+        points: 1000
+
+
+
+  # Farming Achievements
+  wheat_farmer:
+    name: "Wheat Farmer"
+    description: "Player who harvested the most wheat"
+    stat: "minecraft:picked_up.minecraft:wheat"
+    color: "#f59e0b"
+    type: "player"
+    tiers:
+      1:
+        name: "Harvester"
+        description: "1,000 wheat"
+        threshold: 1000
+        icon: "🌾"
+        points: 50
+      2:
+        name: "Wheat Farmer"
+        description: "10,000 wheat"
+        threshold: 10000
+        icon: "🌾"
+        points: 100
+      3:
+        name: "Wheat Baron"
+        description: "100,000 wheat"
+        threshold: 100000
+        icon: "🌾"
+        points: 200
+
+  potato_farmer:
+    name: "Potato Farmer"
+    description: "Player who harvested the most potatoes"
+    stat: "minecraft:picked_up.minecraft:potato"
+    color: "#f97316"
+    type: "player"
+    tiers:
+      1:
+        name: "Potato Picker"
+        description: "1,000 potatoes"
+        threshold: 1000
+        icon: "🥔"
+        points: 50
+      2:
+        name: "Potato Farmer"
+        description: "10,000 potatoes"
+        threshold: 10000
+        icon: "🥔"
+        points: 100
+      3:
+        name: "Potato Baron"
+        description: "100,000 potatoes"
+        threshold: 100000
+        icon: "🥔"
+        points: 200
+
+  carrot_farmer:
+    name: "Carrot Farmer"
+    description: "Player who harvested the most carrots"
+    stat: "minecraft:picked_up.minecraft:carrot"
+    color: "#f59e0b"
+    type: "player"
+    tiers:
+      1:
+        name: "Carrot Picker"
+        description: "1,000 carrots"
+        threshold: 1000
+        icon: "🥕"
+        points: 50
+      2:
+        name: "Carrot Farmer"
+        description: "10,000 carrots"
+        threshold: 10000
+        icon: "🥕"
+        points: 100
+      3:
+        name: "Carrot Baron"
+        description: "100,000 carrots"
+        threshold: 100000
+        icon: "🥕"
+        points: 200
+
+  # Fishing Achievements
+  fisherman:
+    name: "Fisherman"
+    description: "Player who caught the most fish"
+    stat: "minecraft:custom.minecraft:fish_caught"
+    color: "#06b6d4"
+    type: "player"
+    tiers:
+      1:
+        name: "Fisher"
+        description: "100 fish caught"
+        threshold: 100
+        icon: "🎣"
+        points: 50
+      2:
+        name: "Fisherman"
+        description: "1,000 fish caught"
+        threshold: 1000
+        icon: "🎣"
+        points: 100
+      3:
+        name: "Master Fisher"
+        description: "10,000 fish caught"
+        threshold: 10000
+        icon: "🎣"
+        points: 200
+
+  treasure_hunter:
+    name: "Treasure Hunter"
+    description: "Player who fished the most treasure"
+    stat: "minecraft:custom.minecraft:fish_caught"
+    color: "#f59e0b"
+    type: "player"
+    tiers:
+      1:
+        name: "Treasure Finder"
+        description: "50 fish caught"
+        threshold: 50
+        icon: "💎"
+        points: 100
+      2:
+        name: "Treasure Hunter"
+        description: "500 fish caught"
+        threshold: 500
+        icon: "💎"
+        points: 200
+      3:
+        name: "Treasure Master"
+        description: "5,000 fish caught"
+        threshold: 5000
+        icon: "💎"
+        points: 400
+
+  # Building Achievements
+  builder:
+    name: "Builder"
+    description: "Player who placed the most blocks"
+    stat: "minecraft:used.minecraft:stone"
+    color: "#3b82f6"
+    type: "player"
+    tiers:
+      1:
+        name: "Builder"
+        description: "1,000 blocks placed"
+        threshold: 1000
+        icon: "🏗️"
+        points: 50
+      2:
+        name: "Constructor"
+        description: "10,000 blocks placed"
+        threshold: 10000
+        icon: "🏗️"
+        points: 100
+      3:
+        name: "Architect"
+        description: "100,000 blocks placed"
+        threshold: 100000
+        icon: "🏗️"
+        points: 200
+
+  # Mob Kill Achievements
+  zombie_slayer:
+    name: "Zombie Slayer"
+    description: "Player who killed the most zombies"
+    stat: "minecraft:killed.minecraft:zombie"
+    color: "#10b981"
+    type: "player"
+    tiers:
+      1:
+        name: "Zombie Killer"
+        description: "25 zombies"
+        threshold: 25
+        icon: "🧟"
+        points: 25
+      2:
+        name: "Zombie Slayer"
+        description: "100 zombies"
+        threshold: 100
+        icon: "🧟"
+        points: 50
+      3:
+        name: "Zombie Hunter"
+        description: "250 zombies"
+        threshold: 250
+        icon: "🧟"
+        points: 75
+      4:
+        name: "Zombie Destroyer"
+        description: "500 zombies"
+        threshold: 500
+        icon: "🧟"
+        points: 100
+      5:
+        name: "Zombie Legend"
+        description: "1,000 zombies"
+        threshold: 1000
+        icon: "🧟"
+        points: 150
+      6:
+        name: "Zombie Mythic"
+        description: "2,500 zombies"
+        threshold: 2500
+        icon: "🧟"
+        points: 200
+
+  skeleton_slayer:
+    name: "Skeleton Slayer"
+    description: "Player who killed the most skeletons"
+    stat: "minecraft:killed.minecraft:skeleton"
+    color: "#f97316"
+    type: "player"
+    tiers:
+      1:
+        name: "Bone Crusher"
+        description: "25 skeletons"
+        threshold: 25
+        icon: "💀"
+        points: 25
+      2:
+        name: "Skeleton Slayer"
+        description: "100 skeletons"
+        threshold: 100
+        icon: "💀"
+        points: 50
+      3:
+        name: "Skeleton Hunter"
+        description: "250 skeletons"
+        threshold: 250
+        icon: "💀"
+        points: 75
+      4:
+        name: "Skeleton Destroyer"
+        description: "500 skeletons"
+        threshold: 500
+        icon: "💀"
+        points: 100
+      5:
+        name: "Skeleton Legend"
+        description: "1,000 skeletons"
+        threshold: 1000
+        icon: "💀"
+        points: 150
+      6:
+        name: "Skeleton Mythic"
+        description: "2,500 skeletons"
+        threshold: 2500
+        icon: "💀"
+        points: 200
+
+  spider_slayer:
+    name: "Spider Slayer"
+    description: "Player who killed the most spiders"
+    stat: "minecraft:killed.minecraft:spider"
+    color: "#dc2626"
+    type: "player"
+    tiers:
+      1:
+        name: "Web Cutter"
+        description: "25 spiders"
+        threshold: 25
+        icon: "🕷️"
+        points: 25
+      2:
+        name: "Spider Slayer"
+        description: "100 spiders"
+        threshold: 100
+        icon: "🕷️"
+        points: 50
+      3:
+        name: "Spider Hunter"
+        description: "250 spiders"
+        threshold: 250
+        icon: "🕷️"
+        points: 75
+      4:
+        name: "Spider Destroyer"
+        description: "500 spiders"
+        threshold: 500
+        icon: "🕷️"
+        points: 100
+      5:
+        name: "Spider Legend"
+        description: "1,000 spiders"
+        threshold: 1000
+        icon: "🕷️"
+        points: 150
+      6:
+        name: "Spider Mythic"
+        description: "2,500 spiders"
+        threshold: 2500
+        icon: "🕷️"
+        points: 200
+
+  creeper_slayer:
+    name: "Creeper Slayer"
+    description: "Player who killed the most creepers"
+    stat: "minecraft:killed.minecraft:creeper"
+    color: "#10b981"
+    type: "player"
+    tiers:
+      1:
+        name: "Creeper Killer"
+        description: "25 creepers"
+        threshold: 25
+        icon: "💥"
+        points: 50
+      2:
+        name: "Creeper Slayer"
+        description: "100 creepers"
+        threshold: 100
+        icon: "💥"
+        points: 100
+      3:
+        name: "Creeper Hunter"
+        description: "250 creepers"
+        threshold: 250
+        icon: "💥"
+        points: 150
+      4:
+        name: "Creeper Destroyer"
+        description: "500 creepers"
+        threshold: 500
+        icon: "💥"
+        points: 200
+      5:
+        name: "Creeper Legend"
+        description: "1,000 creepers"
+        threshold: 1000
+        icon: "💥"
+        points: 300
+      6:
+        name: "Creeper Mythic"
+        description: "2,500 creepers"
+        threshold: 2500
+        icon: "💥"
+        points: 400
+
+  enderman_slayer:
+    name: "Enderman Slayer"
+    description: "Player who killed the most endermen"
+    stat: "minecraft:killed.minecraft:enderman"
+    color: "#8b5cf6"
+    type: "player"
+    tiers:
+      1:
+        name: "Enderman Killer"
+        description: "10 endermen"
+        threshold: 10
+        icon: "👁️"
+        points: 50
+      2:
+        name: "Enderman Slayer"
+        description: "50 endermen"
+        threshold: 50
+        icon: "👁️"
+        points: 100
+      3:
+        name: "Enderman Hunter"
+        description: "100 endermen"
+        threshold: 100
+        icon: "👁️"
+        points: 150
+      4:
+        name: "Enderman Destroyer"
+        description: "250 endermen"
+        threshold: 250
+        icon: "👁️"
+        points: 200
+      5:
+        name: "Enderman Legend"
+        description: "500 endermen"
+        threshold: 500
+        icon: "👁️"
+        points: 300
+      6:
+        name: "Enderman Mythic"
+        description: "1,000 endermen"
+        threshold: 1000
+        icon: "👁️"
+        points: 400
+
+  # Add more achievements here as needed

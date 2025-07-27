@@ -3,13 +3,13 @@
 ## 🚀 Getting Started in 5 Minutes
 
 ### 1. Download and Install
-1. Download `PlayerStatsToMySQL-1.0.jar` from the releases
+1. Download `Progression-1.0.jar` from the releases
 2. Place it in your server's `plugins` folder
 3. Start your server once to generate the config file
 
 ### 2. Configure Database
 1. Stop your server
-2. Edit `plugins/PlayerStatsToMySQL/config.yml`
+2. Edit `plugins/Progression/config.yml`
 3. Update the MySQL settings:
 
 ```yaml
@@ -26,7 +26,7 @@ Run the `setup.sql` file in your MySQL server to create the database and tables.
 ### 4. Start Server
 1. Start your server
 2. Check the console for any error messages
-3. The plugin should show "PlayerStatsToMySQL v1.0 enabled successfully!"
+3. The plugin should show "Progression v1.0 enabled successfully!"
 
 ### 5. Test the Plugin
 1. Join your server
@@ -69,12 +69,12 @@ Run the `setup.sql` file in your MySQL server to create the database and tables.
 ## 📋 Required Permissions
 
 Default permissions (OP has all):
-- `playerstatstomysql.sqlstats.sync` - Sync stats
-- `playerstatstomysql.sqlstats.export` - Export data
-- `playerstatstomysql.sqlstats.view` - View stats
-- `playerstatstomysql.sqlstats.reload` - Reload config
-- `playerstatstomysql.sqlstats.status` - Check status
-- `playerstatstomysql.sqlstats.help` - Show help
+- `progression.sqlstats.sync` - Sync stats
+- `progression.sqlstats.export` - Export data
+- `progression.sqlstats.view` - View stats
+- `progression.sqlstats.reload` - Reload config
+- `progression.sqlstats.status` - Check status
+- `progression.sqlstats.help` - Show help
 
 ## 🎯 Quick Commands
 

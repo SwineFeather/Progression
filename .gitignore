@@ -55,5 +55,5 @@ ehthumbs.db
 Thumbs.db
 
 # Plugin specific
-plugins/PlayerStatsToMySQL/exports/
-plugins/PlayerStatsToMySQL/logs/ 
+plugins/Progression/exports/
+plugins/Progression/logs/ 

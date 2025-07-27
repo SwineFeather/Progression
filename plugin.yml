@@ -1,6 +1,6 @@
-name: PlayerStatsToMySQL
+name: Progression
 version: 1.0
-main: com.swinefeather.playerstatstomysql.Main
+main: com.swinefeather.progression.Main
 api-version: 1.13
 softdepend: [PlaceholderAPI, Towny]
 authors: [SwineFeather]
@@ -11,36 +11,66 @@ commands:
     description: Manages player stats syncing
     usage: /<command> <sync|export|view|reload|placeholder|status|versioncheck|cleanup|stop|start|help>
 permissions:
-  playerstatstomysql.sqlstats.sync:
+  progression.sqlstats.sync:
     description: Allows syncing stats
-    default: op
-  playerstatstomysql.sqlstats.export:
+    default: true
+  progression.sqlstats.export:
     description: Allows exporting stats
-    default: op
-  playerstatstomysql.sqlstats.view:
+    default: true
+  progression.sqlstats.view:
     description: Allows viewing stats
-    default: op
-  playerstatstomysql.sqlstats.reload:
+    default: true
+  progression.sqlstats.reload:
     description: Allows reloading config
-    default: op
-  playerstatstomysql.sqlstats.placeholder:
+    default: true
+  progression.sqlstats.placeholder:
     description: Allows managing placeholders
-    default: op
-  playerstatstomysql.sqlstats.status:
+    default: true
+  progression.sqlstats.status:
     description: Allows checking plugin status
-    default: op
-  playerstatstomysql.sqlstats.versioncheck:
+    default: true
+  progression.sqlstats.versioncheck:
     description: Allows checking version compatibility
-    default: op
-  playerstatstomysql.sqlstats.cleanup:
+    default: true
+  progression.sqlstats.cleanup:
     description: Allows running cleanup
-    default: op
-  playerstatstomysql.sqlstats.stop:
+    default: true
+  progression.sqlstats.stop:
     description: Allows stopping the plugin
-    default: op
-  playerstatstomysql.sqlstats.start:
+    default: true
+  progression.sqlstats.start:
     description: Allows starting the plugin
-    default: op
-  playerstatstomysql.sqlstats.help:
+    default: true
+  progression.sqlstats.help:
     description: Allows viewing command help
-    default: op
+    default: true
+  progression.sqlstats.generate:
+    description: Allows generating possible stats file
+    default: true
+  progression.sqlstats.calculate_awards:
+    description: Allows calculating awards for all players
+    default: true
+  progression.awards.leaderboard:
+    description: Allows viewing award leaderboards
+    default: true
+  progression.awards.list:
+    description: Allows listing awards
+    default: true
+  progression.awards.stats:
+    description: Allows viewing award stats
+    default: true
+  progression.awards.medals:
+    description: Allows viewing medals
+    default: true
+  progression.awards.info:
+    description: Allows viewing award information
+    default: true
+  progression.awards.recalculate:
+    description: Allows recalculating awards
+    default: true
+  progression.awards.sync:
+    description: Allows syncing awards
+    default: true
+  progression.awards.debug:
+    description: Allows debug award commands
+    default: true

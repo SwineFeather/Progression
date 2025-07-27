@@ -1,6 +1,6 @@
-# Contributing to PlayerStatsToMySQL
+# Contributing to Progression
 
-Thank you for your interest in contributing to PlayerStatsToMySQL! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Progression! This document provides guidelines and information for contributors.
 
 ## 🤝 How to Contribute
 

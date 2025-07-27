@@ -1,10 +1,10 @@
-name: PlayerStatsToMySQL
+name: Progression
 version: 1.0
-main: com.swinefeather.playerstatstomysql.Main
+main: com.swinefeather.progression.Main
 api-version: 1.13
 softdepend: [PlaceholderAPI, Towny]
 authors: [SwineFeather]
-description: Syncs player stats to a MySQL database
+description: Comprehensive progression system with stats, awards, and leveling
 
 commands:
   sqlstats:
@@ -12,53 +12,116 @@ commands:
     usage: /<command> <sync|export|view|reload|placeholder|status|versioncheck|cleanup|stop|start|help>
   awards:
     description: View player awards and leaderboards
-    usage: /<command> <leaderboard|stats|medals|info|recalculate> [player] [page]
+  level:
+    description: Leveling system commands
+    usage: /<command> <info|leaderboard|top|recalculate|addxp|setlevel|reset|help>
+    usage: /<command> <leaderboard|list|stats|medals|info|recalculate> [player] [page]
+  townstats:
+    description: Town progression and achievement commands
+    usage: /<command> <info|level|achievements|claim|leaderboard|sync|reset|reload> [town]
 permissions:
-  playerstatstomysql.sqlstats.sync:
+  progression.sqlstats.sync:
     description: Allows syncing stats
-    default: op
-  playerstatstomysql.sqlstats.export:
+    default: true
+  progression.sqlstats.export:
     description: Allows exporting stats
-    default: op
-  playerstatstomysql.sqlstats.view:
+    default: true
+  progression.sqlstats.view:
     description: Allows viewing stats
-    default: op
-  playerstatstomysql.sqlstats.reload:
+    default: true
+  progression.sqlstats.reload:
     description: Allows reloading config
-    default: op
-  playerstatstomysql.sqlstats.placeholder:
+    default: true
+  progression.sqlstats.placeholder:
     description: Allows managing placeholders
-    default: op
-  playerstatstomysql.sqlstats.status:
+    default: true
+  progression.sqlstats.status:
     description: Allows checking plugin status
-    default: op
-  playerstatstomysql.sqlstats.versioncheck:
+    default: true
+  progression.sqlstats.versioncheck:
     description: Allows checking version compatibility
-    default: op
-  playerstatstomysql.sqlstats.cleanup:
+    default: true
+  progression.sqlstats.cleanup:
     description: Allows running cleanup
-    default: op
-  playerstatstomysql.sqlstats.stop:
+    default: true
+  progression.sqlstats.stop:
     description: Allows stopping the plugin
-    default: op
-  playerstatstomysql.sqlstats.start:
+    default: true
+  progression.sqlstats.start:
     description: Allows starting the plugin
-    default: op
-  playerstatstomysql.sqlstats.help:
+    default: true
+  progression.sqlstats.help:
     description: Allows viewing command help
-    default: op
-  playerstatstomysql.awards.leaderboard:
+    default: true
+  progression.sqlstats.generate:
+    description: Allows generating possible stats file
+    default: true
+  progression.sqlstats.calculate_awards:
+    description: Allows calculating awards for all players
+    default: true
+  progression.awards.leaderboard:
     description: Allows viewing award leaderboards
     default: true
-  playerstatstomysql.awards.stats:
+  progression.awards.list:
+    description: Allows listing available awards
+    default: true
+  progression.awards.stats:
     description: Allows viewing player statistics
     default: true
-  playerstatstomysql.awards.medals:
+  progression.awards.medals:
     description: Allows viewing player awards
     default: true
-  playerstatstomysql.awards.info:
+  progression.awards.info:
     description: Allows viewing award information
     default: true
-  playerstatstomysql.awards.recalculate:
+  progression.awards.recalculate:
     description: Allows recalculating player awards
+    default: true
+  progression.awards.sync:
+    description: Allows syncing awards to Supabase
+    default: true
+  progression.awards.debug:
+    description: Allows debugging player stats
+    default: true
+  progression.level.info:
+    description: Allows viewing level information
+    default: true
+  progression.level.leaderboard:
+    description: Allows viewing level leaderboards
+    default: true
+  progression.level.recalculate:
+    description: Allows recalculating levels
+    default: true
+  progression.level.addxp:
+    description: Allows adding XP to players
+    default: true
+  progression.level.setlevel:
+    description: Allows setting player levels
+    default: true
+  progression.level.reset:
+    description: Allows resetting player levels
+    default: true
+  progression.level.help:
+    description: Allows viewing level help
+    default: true
+  progression.level.reload:
+    description: Allows reloading the Progression config
     default: op
+  progression.level.claim:
+    description: Allows claiming achievements
+    default: true
+  progression.towny.admin:
+    description: Allows admin towny commands
+    default: op
+  progression.towny.info:
+    description: Allows viewing town information
+    default: true
+  progression.towny.level:
+    description: Allows viewing town levels
+    default: true
+  progression.towny.leaderboard:
+    description: Allows viewing town leaderboards
+    default: true
+  progression.towny.achievements:
+    description: Allows viewing town achievements
+    default: true

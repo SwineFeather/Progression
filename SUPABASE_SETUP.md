@@ -1,6 +1,6 @@
 # Supabase Setup Guide
 
-This guide will help you set up Supabase for use with PlayerStatsToMySQL plugin.
+This guide will help you set up Supabase for use with Progression plugin.
 
 ## Prerequisites
 
@@ -42,7 +42,7 @@ This will create:
 
 ## Step 4: Configure the Plugin
 
-1. Edit your `plugins/PlayerStatsToMySQL/config.yml`
+1. Edit your `plugins/Progression/config.yml`
 2. Update the Supabase section:
 
 ```yaml
