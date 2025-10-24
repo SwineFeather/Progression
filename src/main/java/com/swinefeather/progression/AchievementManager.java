@@ -155,6 +155,75 @@ public class AchievementManager {
         TownAchievementData achievementData = townAchievements.computeIfAbsent(townName, 
             k -> new TownAchievementData(townName));
         
+        // First check achievements from config (towny.achievements section)
+        ConfigurationSection achievements = plugin.getConfig().getConfigurationSection("towny.achievements");
+        if (achievements != null) {
+            for (String achievementKey : achievements.getKeys(false)) {
+                ConfigurationSection achievementSection = achievements.getConfigurationSection(achievementKey);
+                if (achievementSection == null) continue;
+                
+                String statName = achievementSection.getString("stat");
+                if (statName == null) continue;
+                
+                Object statValue = townStats.get(statName);
+                if (statValue == null) continue;
+                
+                int currentValue = ((Number) statValue).intValue();
+                
+                ConfigurationSection tiers = achievementSection.getConfigurationSection("tiers");
+                if (tiers == null) continue;
+                
+                for (String tierKey : tiers.getKeys(false)) {
+                    ConfigurationSection tierSection = tiers.getConfigurationSection(tierKey);
+                    if (tierSection == null) continue;
+                    
+                    int tier = Integer.parseInt(tierKey);
+                    int threshold = tierSection.getInt("threshold", 0);
+                    String tierName = tierSection.getString("name", "Unknown");
+                    int points = tierSection.getInt("points", 0);
+                    
+                    if (currentValue >= threshold) {
+                        if (!achievementData.hasUnlockedTier(achievementKey, tier)) {
+                            // Create AchievementTier object
+                            AchievementTier achievementTier = new AchievementTier(tier, tierName, tierSection.getString("description", ""), threshold, tierSection.getString("icon", ""), points);
+                            
+                            // Unlock achievement
+                            achievementData.unlockTier(achievementKey, achievementTier, currentValue);
+                            
+                            // Award XP
+                            int xpGained = points;
+                            if (plugin.levelManager != null) {
+                                plugin.levelManager.addTownXP(townName, xpGained);
+                            }
+                            
+                            // Sync to database if enabled
+                            if (plugin.levelDatabaseManager != null && plugin.levelDatabaseManager.isEnabled()) {
+                                plugin.levelDatabaseManager.syncUnlockedAchievement(null, townName, achievementKey, tier, xpGained);
+                            }
+                            
+                            // Sync to Supabase if enabled
+                            if (plugin.supabaseManager != null && plugin.supabaseManager.isEnabled()) {
+                                plugin.supabaseManager.syncTownAchievement(townName, achievementKey, tier, xpGained);
+                            }
+                            
+                            // Announce achievement
+                            if (plugin.getConfig().getBoolean("towny.notifications.achievements", true)) {
+                                plugin.getServer().broadcastMessage("§6[Towny] §e" + townName + " §ahas unlocked achievement: §6" + tierName + "§a!");
+                                
+                                // Play achievement sound for all online players
+                                for (org.bukkit.entity.Player player : plugin.getServer().getOnlinePlayers()) {
+                                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+                                }
+                            }
+                            
+                            logManager.debug("Town " + townName + " unlocked achievement: " + tierName + " (+" + xpGained + " XP)");
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Then check achievements from achievement definitions
         for (AchievementDefinition achievement : achievementDefinitions) {
             // Only check town achievements
             if (achievement.getId().equals("population_growth") || achievement.getId().equals("nation_member") || 
@@ -199,6 +268,11 @@ public class AchievementManager {
                     // Sync to database if enabled
                     if (plugin.levelDatabaseManager != null && plugin.levelDatabaseManager.isEnabled()) {
                         plugin.levelDatabaseManager.syncUnlockedAchievement(playerUUID, null, achievement.getId(), tier.getTier(), xpGained);
+                    }
+                    
+                    // Sync to Supabase if enabled
+                    if (plugin.supabaseManager != null && plugin.supabaseManager.isEnabled()) {
+                        plugin.supabaseManager.syncUnlockedAchievement(playerUUID, achievement.getId(), tier.getTier(), xpGained);
                     }
                     
                     // Send notification
@@ -252,6 +326,11 @@ public class AchievementManager {
                     // Sync to database if enabled
                     if (plugin.levelDatabaseManager != null && plugin.levelDatabaseManager.isEnabled()) {
                         plugin.levelDatabaseManager.syncUnlockedAchievement(null, townName, achievement.getId(), tier.getTier(), xpGained);
+                    }
+                    
+                    // Sync to Supabase if enabled
+                    if (plugin.supabaseManager != null && plugin.supabaseManager.isEnabled()) {
+                        plugin.supabaseManager.syncTownAchievement(townName, achievement.getId(), tier.getTier(), xpGained);
                     }
                     
                     logManager.debug("Town " + townName + " unlocked achievement: " + tier.getName() + " (+" + xpGained + " XP)");

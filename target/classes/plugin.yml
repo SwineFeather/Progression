@@ -9,7 +9,7 @@ description: Comprehensive progression system with stats, awards, and leveling
 commands:
   sqlstats:
     description: Manages player stats syncing
-    usage: /<command> <sync|export|view|reload|placeholder|status|versioncheck|cleanup|stop|start|help>
+    usage: /<command> <sync|export|view|reload|placeholder|status|versioncheck|cleanup|stop|start|test|help>
   awards:
     description: View player awards and leaderboards
   level:
@@ -53,6 +53,12 @@ permissions:
   progression.sqlstats.help:
     description: Allows viewing command help
     default: true
+  progression.sqlstats.test:
+    description: Allows testing Supabase functionality
+    default: op
+  progression.sqlstats.cache:
+    description: Allows viewing cache statistics
+    default: op
   progression.sqlstats.generate:
     description: Allows generating possible stats file
     default: true

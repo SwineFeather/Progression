@@ -46,6 +46,10 @@ public class StatSyncTask {
             return;
         }
 
+        long startTime = System.currentTimeMillis();
+        int processedPlayers = 0;
+        int failedPlayers = 0;
+        
         try {
             // Collect all player UUIDs from all worlds first
             Map<UUID, String> allPlayers = new HashMap<>();
@@ -121,11 +125,20 @@ public class StatSyncTask {
                         plugin.getLogger().info("Skipping achievement checking and XP calculation during sync to prevent level-up spam");
                     }
                 }
+                
+                processedPlayers++;
             }
             
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            
             if (sender != null) {
-                sender.sendMessage("§aFull sync completed for " + allPlayers.size() + " players!");
+                sender.sendMessage("§aFull sync completed for " + processedPlayers + " players in " + duration + "ms!");
+                if (failedPlayers > 0) {
+                    sender.sendMessage("§cFailed to process " + failedPlayers + " players.");
+                }
             }
+            plugin.getLogger().info("Full sync completed: " + processedPlayers + " players processed in " + duration + "ms");
             // Full sync completed
             
         } catch (Exception e) {

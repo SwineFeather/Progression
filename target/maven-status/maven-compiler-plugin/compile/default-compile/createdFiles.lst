@@ -2,12 +2,14 @@ com\swinefeather\progression\AwardManager$AwardInfo.class
 com\swinefeather\progression\PlayerStats.class
 com\swinefeather\progression\AchievementManager$PlayerAchievementData.class
 com\swinefeather\progression\AchievementManager$TownAchievementData.class
+com\swinefeather\progression\CacheManager$CacheEntry.class
 com\swinefeather\progression\PlaceholderManager.class
 com\swinefeather\progression\Main.class
 com\swinefeather\progression\StatSyncTask.class
 com\swinefeather\progression\PossibleStatsGenerator.class
 com\swinefeather\progression\ProgressionAPI$AwardInfo.class
 com\swinefeather\progression\AwardManager$AwardRanking.class
+com\swinefeather\progression\CacheManager.class
 com\swinefeather\progression\AwardManager.class
 com\swinefeather\progression\LogManager.class
 com\swinefeather\progression\AwardManager$PlayerAwards.class
@@ -43,7 +45,6 @@ com\swinefeather\progression\PlayerStats$MiningStats.class
 com\swinefeather\progression\XPCalculator.class
 com\swinefeather\progression\TownyManager.class
 com\swinefeather\progression\ProgressionAPI$AwardLeaderboardEntry.class
-com\swinefeather\progression\LevelManager$2.class
 com\swinefeather\progression\Main$1.class
 com\swinefeather\progression\AchievementManager$AchievementDefinition.class
 com\swinefeather\progression\StatSyncTask$1.class
@@ -55,7 +56,6 @@ com\swinefeather\progression\TownyManager$TownLevelData.class
 com\swinefeather\progression\LevelManager$LevelDefinition.class
 com\swinefeather\progression\AwardCommands.class
 com\swinefeather\progression\LevelDatabaseManager.class
-com\swinefeather\progression\LevelManager$1.class
 com\swinefeather\progression\ProgressionAPI$PlayerLevelInfo.class
 com\swinefeather\progression\StatResolver.class
 com\swinefeather\progression\AwardCommands$LeaderboardEntry.class

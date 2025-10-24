@@ -7,6 +7,23 @@ level:
   broadcast_level_ups: true
   # Level up sound volume for other players (0.0 to 1.0)
   level_up_sound_volume: 0.3
+  
+  # Customizable Player Levels (optional - will use defaults if not configured)
+  player_levels:
+    # Example level configuration:
+    # level_1:
+    #   level: 1
+    #   xp_required: 0
+    #   title: "Newcomer"
+    #   description: "Welcome to the server!"
+    #   color: "#6b7280"
+    # level_2:
+    #   level: 2
+    #   xp_required: 100
+    #   title: "Novice"
+    #   description: "Getting started"
+    #   color: "#10b981"
+    # Add more levels as needed...
 
 # Database Configuration
 database:
@@ -38,6 +55,7 @@ supabase:
     on_player_quit: true  # Update when player leaves
     batch_sync_interval: 300000  # 5 minutes between batch syncs
     real_time_updates: false  # Disable for performance
+    sync_definitions_on_startup: false  # Sync level/achievement definitions on startup (set to false to prevent 409 conflicts)
 
 # Sync settings
 sync-interval-ticks: 1728000  # 24 hours in ticks (20 ticks = 1 second)
@@ -324,22 +342,26 @@ towny:
     # Sync town data periodically
     interval_ticks: 72000  # 1 hour
     # Sync town data on server startup
-    on_startup: true
+    on_startup: false  # Disable automatic sync on startup to prevent level-up spam
     # Sync town data when town balance changes
     on_balance_change: true
     # Sync town data when town size changes
     on_size_change: true
+    # Skip the first sync to prevent level-up messages on restart
+    skip_first_sync: true  # Skip the first sync to prevent level-up messages on restart
   
   # Notifications
   notifications:
     # Announce town level ups
-    level_ups: true
+    level_ups: true  # Enable level-up announcements
     # Announce town achievements
     achievements: true
     # Show town level in chat
     show_level_in_chat: false
     # Show town level in tab list
     show_level_in_tab: false
+    # Disable startup sync notifications
+    startup_sync: false  # Disable startup sync notifications
 
 # Export settings
 export:
@@ -2923,3 +2945,13 @@ achievements:
         points: 400
 
   # Add more achievements here as needed
+
+# Cache configuration
+cache:
+  enabled: true
+  player_stats_ttl_seconds: 300  # 5 minutes
+  player_levels_ttl_seconds: 600  # 10 minutes
+  town_stats_ttl_seconds: 300  # 5 minutes
+  town_levels_ttl_seconds: 600  # 10 minutes
+  leaderboard_ttl_seconds: 60  # 1 minute
+  max_size: 1000  # Maximum number of entries per cache

@@ -130,9 +130,12 @@ public class LevelDatabaseManager {
 
                     try (Response response = httpClient.newCall(request).execute()) {
                         if (!response.isSuccessful()) {
-                            // 409 Conflict is expected for upserts with duplicate keys
+                            // 409 Conflict is expected for upserts with duplicate keys - don't log this
                             if (response.code() != 409) {
                                 logManager.warning("Failed to sync player level definition " + levelDef.getLevel() + ": " + response.code());
+                            } else {
+                                // Log at debug level for 409 conflicts since they're expected
+                                logManager.debug("Player level definition " + levelDef.getLevel() + " already exists (409 conflict - expected)");
                             }
                         }
                     }
@@ -165,9 +168,12 @@ public class LevelDatabaseManager {
 
                     try (Response response = httpClient.newCall(request).execute()) {
                         if (!response.isSuccessful()) {
-                            // 409 Conflict is expected for upserts with duplicate keys
+                            // 409 Conflict is expected for upserts with duplicate keys - don't log this
                             if (response.code() != 409) {
                                 logManager.warning("Failed to sync town level definition " + levelDef.getLevel() + ": " + response.code());
+                            } else {
+                                // Log at debug level for 409 conflicts since they're expected
+                                logManager.debug("Town level definition " + levelDef.getLevel() + " already exists (409 conflict - expected)");
                             }
                         }
                     }
@@ -217,9 +223,12 @@ public class LevelDatabaseManager {
 
                     try (Response response = httpClient.newCall(request).execute()) {
                         if (!response.isSuccessful()) {
-                            // 409 Conflict is expected for upserts with duplicate keys
+                            // 409 Conflict is expected for upserts with duplicate keys - don't log this
                             if (response.code() != 409) {
                                 logManager.warning("Failed to sync achievement definition " + achievement.getId() + ": " + response.code());
+                            } else {
+                                // Log at debug level for 409 conflicts since they're expected
+                                logManager.debug("Achievement definition " + achievement.getId() + " already exists (409 conflict - expected)");
                             }
                         }
                     }
@@ -252,9 +261,12 @@ public class LevelDatabaseManager {
 
                         try (Response tierResponse = httpClient.newCall(tierRequest).execute()) {
                             if (!tierResponse.isSuccessful()) {
-                                // 409 Conflict is expected for upserts with duplicate keys
+                                // 409 Conflict is expected for upserts with duplicate keys - don't log this
                                 if (tierResponse.code() != 409) {
                                     logManager.warning("Failed to sync achievement tier " + achievement.getId() + " tier " + tier.getTier() + ": " + tierResponse.code());
+                                } else {
+                                    // Log at debug level for 409 conflicts since they're expected
+                                    logManager.debug("Achievement tier " + achievement.getId() + " tier " + tier.getTier() + " already exists (409 conflict - expected)");
                                 }
                             }
                         }
@@ -457,7 +469,13 @@ public class LevelDatabaseManager {
                         logManager.debug("Synced town data for " + townName);
                         return true;
                     } else {
-                        logManager.warning("Failed to sync town data for " + townName + ": " + response.code());
+                        // 409 Conflict is expected for upserts with duplicate keys - don't log this
+                        if (response.code() != 409) {
+                            logManager.warning("Failed to sync town data for " + townName + ": " + response.code());
+                        } else {
+                            // Log at debug level for 409 conflicts since they're expected
+                            logManager.debug("Town data for " + townName + " already exists (409 conflict - expected)");
+                        }
                         return false;
                     }
                 }
@@ -502,7 +520,13 @@ public class LevelDatabaseManager {
                         logManager.debug("Synced town level data for " + townName);
                         return true;
                     } else {
-                        logManager.warning("Failed to sync town level data for " + townName + ": " + response.code());
+                        // 409 Conflict is expected for upserts with duplicate keys - don't log this
+                        if (response.code() != 409) {
+                            logManager.warning("Failed to sync town level data for " + townName + ": " + response.code());
+                        } else {
+                            // Log at debug level for 409 conflicts since they're expected
+                            logManager.debug("Town level data for " + townName + " already exists (409 conflict - expected)");
+                        }
                         return false;
                     }
                 }

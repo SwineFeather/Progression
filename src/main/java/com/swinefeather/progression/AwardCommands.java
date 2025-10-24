@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 import java.io.StringReader;
 
@@ -695,9 +697,36 @@ public class AwardCommands implements CommandExecutor, TabCompleter {
         
         // Use Supabase if available, otherwise fall back to MySQL
         if (supabaseManager != null && supabaseManager.isEnabled()) {
-            // For now, return empty list - we'll implement Supabase queries later
-            plugin.getLogger().info("Supabase leaderboard queries not yet implemented");
-            return entries;
+            try {
+                int limit = 10;
+                int offset = (page - 1) * limit;
+                
+                // Get leaderboard data from Supabase
+                String leaderboardData = supabaseManager.getLeaderboard(category, limit + offset);
+                if (leaderboardData != null && !leaderboardData.equals("[]")) {
+                    // Parse JSON response
+                    JsonArray jsonArray = JsonParser.parseString(leaderboardData).getAsJsonArray();
+                    
+                    // Skip to the correct page
+                    int startIndex = offset;
+                    int endIndex = Math.min(startIndex + limit, jsonArray.size());
+                    
+                    for (int i = startIndex; i < endIndex; i++) {
+                        JsonObject entry = jsonArray.get(i).getAsJsonObject();
+                        LeaderboardEntry leaderboardEntry = new LeaderboardEntry();
+                        leaderboardEntry.playerName = entry.has("name") ? entry.get("name").getAsString() : "Unknown";
+                        leaderboardEntry.totalPoints = entry.has("total_points") ? entry.get("total_points").getAsDouble() : 0.0;
+                        leaderboardEntry.goldMedals = entry.has("gold_medals") ? entry.get("gold_medals").getAsInt() : 0;
+                        leaderboardEntry.silverMedals = entry.has("silver_medals") ? entry.get("silver_medals").getAsInt() : 0;
+                        leaderboardEntry.bronzeMedals = entry.has("bronze_medals") ? entry.get("bronze_medals").getAsInt() : 0;
+                        leaderboardEntry.totalMedals = entry.has("total_medals") ? entry.get("total_medals").getAsInt() : 0;
+                        entries.add(leaderboardEntry);
+                    }
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to get leaderboard from Supabase: " + e.getMessage());
+                // Fall back to empty list
+            }
         } else if (databaseManager != null && databaseManager.isConnected()) {
             // Fallback to MySQL
             int limit = 10;
@@ -706,7 +735,7 @@ public class AwardCommands implements CommandExecutor, TabCompleter {
             String sql = "SELECT player_name, total_points, gold_medals, silver_medals, bronze_medals, " +
                         "stone_tier, iron_tier, diamond_tier, last_updated " +
                         "FROM player_awards ORDER BY total_points DESC LIMIT ? OFFSET ?";
-
+            
             try (Connection conn = databaseManager.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 
@@ -717,14 +746,11 @@ public class AwardCommands implements CommandExecutor, TabCompleter {
                     while (rs.next()) {
                         LeaderboardEntry entry = new LeaderboardEntry();
                         entry.playerName = rs.getString("player_name");
-                        entry.totalPoints = rs.getInt("total_points");
+                        entry.totalPoints = rs.getDouble("total_points");
                         entry.goldMedals = rs.getInt("gold_medals");
                         entry.silverMedals = rs.getInt("silver_medals");
                         entry.bronzeMedals = rs.getInt("bronze_medals");
-                        entry.stoneTier = rs.getInt("stone_tier");
-                        entry.ironTier = rs.getInt("iron_tier");
-                        entry.diamondTier = rs.getInt("diamond_tier");
-                        entry.lastUpdated = rs.getTimestamp("last_updated");
+                        entry.totalMedals = entry.goldMedals + entry.silverMedals + entry.bronzeMedals;
                         entries.add(entry);
                     }
                 }
@@ -739,9 +765,34 @@ public class AwardCommands implements CommandExecutor, TabCompleter {
     private PlayerStats getPlayerStats(String playerName) throws Exception {
         // Use Supabase if available, otherwise fall back to MySQL
         if (supabaseManager != null && supabaseManager.isEnabled()) {
-            // For now, return null - we'll implement Supabase queries later
-            plugin.getLogger().info("Supabase player stats queries not yet implemented");
-            return null;
+            try {
+                // First get the player UUID
+                UUID playerUUID = null;
+                org.bukkit.OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(playerName);
+                if (offlinePlayer.hasPlayedBefore()) {
+                    playerUUID = offlinePlayer.getUniqueId();
+                }
+                
+                if (playerUUID == null) {
+                    return null;
+                }
+                
+                // Get player stats from Supabase
+                String statsData = supabaseManager.getPlayerStats(playerUUID);
+                if (statsData != null && !statsData.equals("[]")) {
+                    JsonArray jsonArray = JsonParser.parseString(statsData).getAsJsonArray();
+                    if (jsonArray.size() > 0) {
+                        JsonObject statsObject = jsonArray.get(0).getAsJsonObject();
+                        if (statsObject.has("stats")) {
+                            String statsJson = statsObject.get("stats").toString();
+                            return PlayerStats.fromJson(statsJson);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to get player stats from Supabase: " + e.getMessage());
+                // Fall back to null
+            }
         } else if (databaseManager != null && databaseManager.isConnected()) {
             // Fallback to MySQL
             String sql = "SELECT stats FROM player_stats WHERE player_name = ?";
@@ -768,9 +819,59 @@ public class AwardCommands implements CommandExecutor, TabCompleter {
     private PlayerAwards getPlayerAwards(String playerName) throws Exception {
         // Use Supabase if available, otherwise fall back to MySQL
         if (supabaseManager != null && supabaseManager.isEnabled()) {
-            // For now, return null - we'll implement Supabase queries later
-            plugin.getLogger().info("Supabase player awards queries not yet implemented");
-            return null;
+            try {
+                // First get the player UUID
+                UUID playerUUID = null;
+                org.bukkit.OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(playerName);
+                if (offlinePlayer.hasPlayedBefore()) {
+                    playerUUID = offlinePlayer.getUniqueId();
+                }
+                
+                if (playerUUID == null) {
+                    return null;
+                }
+                
+                // Get player awards from Supabase
+                String awardsData = supabaseManager.getPlayerAwards(playerUUID);
+                if (awardsData != null && !awardsData.equals("[]")) {
+                    JsonArray jsonArray = JsonParser.parseString(awardsData).getAsJsonArray();
+                    if (jsonArray.size() > 0) {
+                        PlayerAwards awards = new PlayerAwards();
+                        awards.playerName = playerName;
+                        awards.totalPoints = 0.0;
+                        awards.goldMedals = 0;
+                        awards.silverMedals = 0;
+                        awards.bronzeMedals = 0;
+                        
+                        // Aggregate data from awards
+                        for (int i = 0; i < jsonArray.size(); i++) {
+                            JsonObject awardObject = jsonArray.get(i).getAsJsonObject();
+                            if (awardObject.has("points")) {
+                                awards.totalPoints += awardObject.get("points").getAsDouble();
+                            }
+                            if (awardObject.has("medal")) {
+                                String medal = awardObject.get("medal").getAsString();
+                                switch (medal.toLowerCase()) {
+                                    case "gold":
+                                        awards.goldMedals++;
+                                        break;
+                                    case "silver":
+                                        awards.silverMedals++;
+                                        break;
+                                    case "bronze":
+                                        awards.bronzeMedals++;
+                                        break;
+                                }
+                            }
+                        }
+                        
+                        return awards;
+                    }
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to get player awards from Supabase: " + e.getMessage());
+                // Fall back to null
+            }
         } else if (databaseManager != null && databaseManager.isConnected()) {
             // Fallback to MySQL
             String sql = "SELECT * FROM player_awards WHERE player_name = ?";
@@ -958,10 +1059,11 @@ public class AwardCommands implements CommandExecutor, TabCompleter {
     // Data classes
     public static class LeaderboardEntry {
         public String playerName;
-        public int totalPoints;
+        public double totalPoints;
         public int goldMedals;
         public int silverMedals;
         public int bronzeMedals;
+        public int totalMedals;
         public int stoneTier;
         public int ironTier;
         public int diamondTier;
@@ -970,7 +1072,7 @@ public class AwardCommands implements CommandExecutor, TabCompleter {
 
     public static class PlayerAwards {
         public String playerName;
-        public int totalPoints;
+        public double totalPoints;
         public int goldMedals;
         public int silverMedals;
         public int bronzeMedals;

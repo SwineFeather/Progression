@@ -24,7 +24,7 @@ import org.bukkit.event.server.ServerLoadEvent;
 
 public class Main extends JavaPlugin implements Listener {
     private DatabaseManager dbManager;
-    private SupabaseManager supabaseManager;
+    public SupabaseManager supabaseManager;
     private PlaceholderManager placeholderManager;
     public StatSyncTask statSyncTask;
     public AwardManager awardManager;
@@ -34,12 +34,20 @@ public class Main extends JavaPlugin implements Listener {
     public AchievementManager achievementManager;
     public LevelDatabaseManager levelDatabaseManager;
     public TownyManager townyManager;
+    public CacheManager cacheManager;
     private boolean disabled = false;
 
     @Override
     public void onEnable() {
         // Save default config first
         saveDefaultConfig();
+        
+        // Validate configuration
+        if (!validateConfiguration()) {
+            getLogger().severe("Configuration validation failed! Plugin will be disabled.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
         
         // Initialize LogManager first
         logManager = new LogManager(this);
@@ -101,6 +109,9 @@ public class Main extends JavaPlugin implements Listener {
         // Initialize Towny integration
         townyManager = new TownyManager(this);
         
+        // Initialize CacheManager
+        cacheManager = new CacheManager(this);
+        
         // Initialize AwardManager
         awardManager = new AwardManager(this, supabaseManager, webhookManager, logManager);
         awardManager.initialize(getConfig().getConfigurationSection("awards"));
@@ -108,19 +119,32 @@ public class Main extends JavaPlugin implements Listener {
         // Initialize API
         ProgressionAPI.initialize(this);
 
-        // Initialize AwardManager with LogManager
-        awardManager = new AwardManager(this, supabaseManager, webhookManager, logManager);
-        awardManager.initialize(getConfig().getConfigurationSection("awards"));
-
-        // Sync level and achievement definitions to database
-        if (levelDatabaseManager.isEnabled()) {
-            levelDatabaseManager.syncLevelDefinitions(
-                levelManager.getPlayerLevelDefinitions(), 
-                levelManager.getTownLevelDefinitions()
-            );
-            levelDatabaseManager.syncAchievementDefinitions(
-                achievementManager.getAchievementDefinitions()
-            );
+        // Sync level and achievement definitions to database (only if enabled)
+        boolean syncDefinitionsOnStartup = getConfig().getBoolean("supabase.sync.sync_definitions_on_startup", false);
+        if (syncDefinitionsOnStartup) {
+            if (levelDatabaseManager.isEnabled()) {
+                levelDatabaseManager.syncLevelDefinitions(
+                    levelManager.getPlayerLevelDefinitions(), 
+                    levelManager.getTownLevelDefinitions()
+                );
+                levelDatabaseManager.syncAchievementDefinitions(
+                    achievementManager.getAchievementDefinitions()
+                );
+            }
+            
+            // Sync level and achievement definitions to Supabase
+            if (supabaseManager != null && supabaseManager.isEnabled()) {
+                supabaseManager.syncLevelDefinitions(
+                    levelManager.getPlayerLevelDefinitions(), 
+                    levelManager.getTownLevelDefinitions()
+                );
+                supabaseManager.syncAchievementDefinitions(
+                    achievementManager.getAchievementDefinitions()
+                );
+            }
+            logManager.debug("Synced level and achievement definitions to database");
+        } else {
+            logManager.debug("Skipping definition sync on startup (disabled in config)");
         }
 
         // Level and Achievement systems already initialized above
@@ -182,6 +206,61 @@ public class Main extends JavaPlugin implements Listener {
         // DISABLED: ServerLoadEvent sync to prevent level-up spam
         // The plugin will now only sync when players are online or when manually triggered
         logManager.debug("Skipping ServerLoadEvent sync to prevent level-up spam");
+    }
+    
+    private boolean validateConfiguration() {
+        // Check database configuration
+        String dbType = getConfig().getString("database.type", "mysql");
+        boolean mysqlEnabled = getConfig().getBoolean("mysql.enabled", true);
+        boolean supabaseEnabled = getConfig().getBoolean("supabase.enabled", false);
+        
+        if (dbType.equals("supabase")) {
+            mysqlEnabled = false;
+            supabaseEnabled = true;
+        }
+        
+        // Validate that at least one database is configured
+        if (!mysqlEnabled && !supabaseEnabled) {
+            getLogger().severe("No database is enabled! Please configure either MySQL or Supabase.");
+            return false;
+        }
+        
+        // Validate MySQL configuration if enabled
+        if (mysqlEnabled) {
+            String dbUrl = getConfig().getString("mysql.url");
+            String dbUser = getConfig().getString("mysql.user");
+            String dbPassword = getConfig().getString("mysql.password");
+            
+            if (dbUrl == null || dbUrl.isEmpty() || dbUrl.contains("yourdatabaselink")) {
+                getLogger().severe("MySQL URL not configured properly!");
+                return false;
+            }
+            if (dbUser == null || dbUser.isEmpty() || dbUser.equals("your_username")) {
+                getLogger().severe("MySQL username not configured properly!");
+                return false;
+            }
+            if (dbPassword == null || dbPassword.isEmpty() || dbPassword.equals("your_password")) {
+                getLogger().severe("MySQL password not configured properly!");
+                return false;
+            }
+        }
+        
+        // Validate Supabase configuration if enabled
+        if (supabaseEnabled) {
+            String supabaseUrl = getConfig().getString("supabase.url");
+            String supabaseKey = getConfig().getString("supabase.key");
+            
+            if (supabaseUrl == null || supabaseUrl.isEmpty() || supabaseUrl.contains("your-supabase-url")) {
+                getLogger().severe("Supabase URL not configured properly!");
+                return false;
+            }
+            if (supabaseKey == null || supabaseKey.isEmpty() || supabaseKey.equals("Your key here")) {
+                getLogger().severe("Supabase API key not configured properly!");
+                return false;
+            }
+        }
+        
+        return true;
     }
     
     private boolean initializeMySQL() {
@@ -269,6 +348,9 @@ public class Main extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        if (cacheManager != null) {
+            cacheManager.shutdown();
+        }
         if (dbManager != null) {
             dbManager.close();
         }
@@ -586,6 +668,60 @@ public class Main extends JavaPlugin implements Listener {
                 return true;
             }
 
+            if (subCommand.equals("test") && sender.hasPermission("progression.sqlstats.test")) {
+                if (supabaseManager != null && supabaseManager.isEnabled()) {
+                    sender.sendMessage("§aTesting Supabase connection...");
+                    
+                    // Test basic queries
+                    String leaderboard = supabaseManager.getLeaderboard("total_points", 5);
+                    sender.sendMessage("§7Leaderboard test: " + (leaderboard.length() > 10 ? "✓ Success" : "✗ Failed"));
+                    
+                    String levelLeaderboard = supabaseManager.getLevelLeaderboard(5);
+                    sender.sendMessage("§7Level leaderboard test: " + (levelLeaderboard.length() > 10 ? "✓ Success" : "✗ Failed"));
+                    
+                    // Test player-specific queries if a player name is provided
+                    if (args.length > 1) {
+                        String playerName = args[1];
+                        org.bukkit.OfflinePlayer offlinePlayer = getServer().getOfflinePlayer(playerName);
+                        if (offlinePlayer.hasPlayedBefore()) {
+                            UUID playerUUID = offlinePlayer.getUniqueId();
+                            
+                            String playerStats = supabaseManager.getPlayerStats(playerUUID);
+                            sender.sendMessage("§7Player stats test: " + (playerStats.length() > 10 ? "✓ Success" : "✗ Failed"));
+                            
+                            String playerAwards = supabaseManager.getPlayerAwards(playerUUID);
+                            sender.sendMessage("§7Player awards test: " + (playerAwards.length() > 10 ? "✓ Success" : "✗ Failed"));
+                            
+                            String playerMedals = supabaseManager.getPlayerMedals(playerUUID);
+                            sender.sendMessage("§7Player medals test: " + (playerMedals.length() > 10 ? "✓ Success" : "✗ Failed"));
+                        } else {
+                            sender.sendMessage("§cPlayer " + playerName + " not found");
+                        }
+                    }
+                    
+                    sender.sendMessage("§aSupabase test completed!");
+                } else {
+                    sender.sendMessage("§cSupabase is not enabled or not available");
+                }
+                return true;
+            }
+
+            if (subCommand.equals("cache") && sender.hasPermission("progression.sqlstats.cache")) {
+                if (cacheManager != null) {
+                    Map<String, Object> stats = cacheManager.getCacheStats();
+                    sender.sendMessage("§a=== Cache Statistics ===");
+                    sender.sendMessage("§ePlayer Stats Cache: §f" + stats.get("player_stats_cache_size") + " entries");
+                    sender.sendMessage("§ePlayer Levels Cache: §f" + stats.get("player_levels_cache_size") + " entries");
+                    sender.sendMessage("§eTown Stats Cache: §f" + stats.get("town_stats_cache_size") + " entries");
+                    sender.sendMessage("§eTown Levels Cache: §f" + stats.get("town_levels_cache_size") + " entries");
+                    sender.sendMessage("§eLeaderboard Cache: §f" + stats.get("leaderboard_cache_size") + " entries");
+                    sender.sendMessage("§eMax Cache Size: §f" + stats.get("max_cache_size") + " entries");
+                } else {
+                    sender.sendMessage("§cCache manager is not available");
+                }
+                return true;
+            }
+
             if (subCommand.equals("help") && sender.hasPermission("progression.sqlstats.help")) {
                 sender.sendMessage("§aProgression Commands:");
                 sender.sendMessage("§7/sqlstats sync - Sync all player stats to database (initial sync)");
@@ -598,6 +734,8 @@ public class Main extends JavaPlugin implements Listener {
                 sender.sendMessage("§7/sqlstats cleanup - Clean up old data (if enabled)");
                 sender.sendMessage("§7/sqlstats stop - Disable plugin");
                 sender.sendMessage("§7/sqlstats start - Enable plugin");
+                sender.sendMessage("§7/sqlstats test [player] - Test Supabase functionality");
+                sender.sendMessage("§7/sqlstats cache - View cache statistics");
                 sender.sendMessage("§7/sqlstats help - Show this help message");
                 return true;
             }

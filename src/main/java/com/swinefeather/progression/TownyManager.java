@@ -65,10 +65,15 @@ public class TownyManager {
         logManager.debug("Towny integration initialized");
         
         // Start sync task if enabled
-        if (plugin.getConfig().getBoolean("towny.sync.on_startup", true)) {
+        if (plugin.getConfig().getBoolean("towny.sync.on_startup", false)) {
             new BukkitRunnable() {
                 @Override
                 public void run() {
+                    // Check if we should skip the first sync
+                    if (plugin.getConfig().getBoolean("towny.sync.skip_first_sync", true)) {
+                        logManager.debug("Skipping first town sync to prevent level-up spam on restart");
+                        return;
+                    }
                     syncAllTowns();
                 }
             }.runTaskLaterAsynchronously(plugin, 100L); // 5 seconds after startup
@@ -102,26 +107,68 @@ public class TownyManager {
     }
     
     public void syncAllTowns() {
-        if (!enabled) return;
+        if (!enabled) {
+            logManager.debug("Towny integration is disabled");
+            return;
+        }
+        
+        logManager.debug("Starting town sync...");
         
         try {
+            // Get all towns from Towny
             Object townyUniverse = townyUniverseClass.getMethod("getInstance").invoke(null);
-            Collection<?> towns = (Collection<?>) townyUniverseClass.getMethod("getTowns").invoke(townyUniverse);
+            Object towns = townyUniverseClass.getMethod("getTowns").invoke(townyUniverse);
             
-            logManager.debug("Syncing " + towns.size() + " towns...");
-            
-            for (Object town : towns) {
-                try {
-                    String townName = (String) townClass.getMethod("getName").invoke(town);
-                    syncTown(townName, town);
-                } catch (Exception e) {
-                    logManager.warning("Failed to sync town: " + e.getMessage());
+            if (towns instanceof Collection) {
+                Collection<?> townCollection = (Collection<?>) towns;
+                logManager.debug("Found " + townCollection.size() + " towns to sync");
+                
+                for (Object town : townCollection) {
+                    try {
+                        String townName = (String) townClass.getMethod("getName").invoke(town);
+                        syncTown(townName, town);
+                    } catch (Exception e) {
+                        logManager.warning("Failed to sync town: " + e.getMessage());
+                    }
                 }
+                
+                logManager.debug("Town sync completed");
             }
-            
-            logManager.debug("Town sync completed");
         } catch (Exception e) {
-            logManager.warning("Failed to sync towns: " + e.getMessage());
+            logManager.severe("Failed to sync towns", e);
+        }
+    }
+    
+    public void syncAllTownsWithNotification() {
+        if (!enabled) {
+            logManager.debug("Towny integration is disabled");
+            return;
+        }
+        
+        logManager.debug("Starting town sync with notifications...");
+        
+        try {
+            // Get all towns from Towny
+            Object townyUniverse = townyUniverseClass.getMethod("getInstance").invoke(null);
+            Object towns = townyUniverseClass.getMethod("getTowns").invoke(townyUniverse);
+            
+            if (towns instanceof Collection) {
+                Collection<?> townCollection = (Collection<?>) towns;
+                logManager.debug("Found " + townCollection.size() + " towns to sync");
+                
+                for (Object town : townCollection) {
+                    try {
+                        String townName = (String) townClass.getMethod("getName").invoke(town);
+                        syncTown(townName, town);
+                    } catch (Exception e) {
+                        logManager.warning("Failed to sync town: " + e.getMessage());
+                    }
+                }
+                
+                logManager.debug("Town sync completed");
+            }
+        } catch (Exception e) {
+            logManager.severe("Failed to sync towns", e);
         }
     }
     
@@ -143,9 +190,15 @@ public class TownyManager {
                 checkTownAchievements(townName, townStats);
             }
             
-            // Sync to database
-            if (plugin.levelDatabaseManager != null && plugin.levelDatabaseManager.isEnabled()) {
+            // Sync to database (only if Supabase is not enabled to avoid duplicate syncing)
+            if (plugin.levelDatabaseManager != null && plugin.levelDatabaseManager.isEnabled() && 
+                (plugin.supabaseManager == null || !plugin.supabaseManager.isEnabled())) {
                 plugin.levelDatabaseManager.syncTownData(townName, townStats);
+            }
+            
+            // Sync to Supabase if enabled
+            if (plugin.supabaseManager != null && plugin.supabaseManager.isEnabled()) {
+                plugin.supabaseManager.syncTownStats(townName, townStats);
             }
             
             logManager.debug("Synced town: " + townName);
@@ -258,42 +311,86 @@ public class TownyManager {
     }
     
     private void updateTownLevel(String townName, Map<String, Object> townStats) {
-        // Calculate XP based on config
-        int xp = calculateTownXP(townStats);
-        
-        // Get or create town level data
-        TownLevelData levelData = townLevels.computeIfAbsent(townName, 
-            k -> new TownLevelData(townName, 1, 0));
-        
-        int oldLevel = levelData.getLevel();
-        int oldXP = levelData.getTotalXP();
-        
-        // Add XP
-        levelData.addXP(xp);
-        
-        // Calculate new level
-        int newLevel = calculateTownLevel(levelData.getTotalXP());
-        levelData.setLevel(newLevel);
-        
-        // Check for level up
-        if (newLevel > oldLevel) {
-            String levelName = getTownLevelName(newLevel);
-            logManager.debug("Town " + townName + " leveled up to " + levelName + " (Level " + newLevel + ")!");
-            
-            // Announce level up if enabled
-            if (plugin.getConfig().getBoolean("towny.notifications.level_ups", true)) {
-                Bukkit.broadcastMessage("§6[Towny] §e" + townName + " §ahas reached level " + newLevel + " - " + levelName + "!");
-                
-                // Play level up sound for all online players
-                for (org.bukkit.entity.Player player : Bukkit.getOnlinePlayers()) {
-                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-                }
-            }
+        // Load existing town level data
+        LevelManager.TownLevelData levelData = plugin.levelManager.loadTownLevelData(townName);
+        if (levelData == null) {
+            levelData = new LevelManager.TownLevelData(townName, 1, 0);
+            plugin.levelManager.townLevels.put(townName, levelData);
         }
         
-        // Save to database
-        if (plugin.levelDatabaseManager != null && plugin.levelDatabaseManager.isEnabled()) {
-            plugin.levelDatabaseManager.syncTownLevel(townName, levelData);
+        // Get the last calculated stats from the level data
+        Map<String, Object> lastStats = levelData.getLastCalculatedStats();
+        if (lastStats == null) {
+            lastStats = new HashMap<>();
+        }
+        
+        // Calculate current XP based on current stats
+        int currentXP = calculateTownXP(townStats);
+        
+        // Calculate previous XP based on last stats
+        int previousXP = calculateTownXP(lastStats);
+        
+        // Only add the difference in XP
+        int xpDifference = currentXP - previousXP;
+        
+        if (xpDifference > 0) {
+            int oldLevel = levelData.getLevel();
+            int oldXP = levelData.getTotalXP();
+            
+            // Add only the difference
+            levelData.addXP(xpDifference);
+            
+            // Calculate new level
+            int newLevel = plugin.levelManager.calculateTownLevel(levelData.getTotalXP());
+            levelData.setLevel(newLevel);
+            levelData.setLastUpdated(System.currentTimeMillis());
+            
+            // Update the last calculated stats
+            levelData.setLastCalculatedStats(new HashMap<>(townStats));
+            
+            // Check for level up
+            if (newLevel > oldLevel) {
+                String levelName = getTownLevelName(newLevel);
+                logManager.debug("Town " + townName + " leveled up to " + levelName + " (Level " + newLevel + ")!");
+                
+                // Announce level up if enabled
+                if (plugin.getConfig().getBoolean("towny.notifications.level_ups", true)) {
+                    Bukkit.broadcastMessage("§6[Towny] §e" + townName + " §ahas reached level " + newLevel + " - " + levelName + "!");
+                    
+                    // Play level up sound for all online players
+                    for (org.bukkit.entity.Player player : Bukkit.getOnlinePlayers()) {
+                        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+                    }
+                }
+            }
+            
+            // Save the updated data immediately
+            plugin.levelManager.saveTownLevelData(townName);
+            
+            logManager.debug("Town " + townName + " gained " + xpDifference + " XP (Total: " + levelData.getTotalXP() + ", Level: " + newLevel + ")");
+        } else if (xpDifference < 0) {
+            // Handle XP loss (if stats decreased)
+            logManager.debug("Town " + townName + " lost " + Math.abs(xpDifference) + " XP due to stat changes");
+            levelData.setLastCalculatedStats(new HashMap<>(townStats));
+            plugin.levelManager.saveTownLevelData(townName);
+        } else {
+            // No change in XP, just update the last calculated stats
+            levelData.setLastCalculatedStats(new HashMap<>(townStats));
+            plugin.levelManager.saveTownLevelData(townName);
+        }
+        
+        // Save to database if enabled (only if Supabase is not enabled to avoid duplicate syncing)
+        if (plugin.levelDatabaseManager != null && plugin.levelDatabaseManager.isEnabled() && 
+            (plugin.supabaseManager == null || !plugin.supabaseManager.isEnabled())) {
+            // Convert LevelManager.TownLevelData to TownyManager.TownLevelData for database sync
+            TownLevelData dbLevelData = new TownLevelData(townName, levelData.getLevel(), levelData.getTotalXP());
+            dbLevelData.setLastUpdated(levelData.getLastUpdated());
+            plugin.levelDatabaseManager.syncTownLevel(townName, dbLevelData);
+        }
+        
+        // Sync to Supabase if enabled
+        if (plugin.supabaseManager != null && plugin.supabaseManager.isEnabled()) {
+            plugin.supabaseManager.syncTownLevel(townName, levelData.getLevel(), levelData.getTotalXP());
         }
     }
     
@@ -396,61 +493,67 @@ public class TownyManager {
     }
     
     private void checkTownAchievements(String townName, Map<String, Object> townStats) {
-        ConfigurationSection achievements = plugin.getConfig().getConfigurationSection("towny.achievements");
-        if (achievements == null) return;
-        
-        TownAchievementData achievementData = townAchievements.computeIfAbsent(townName, 
-            k -> new TownAchievementData(townName));
-        
-        for (String achievementKey : achievements.getKeys(false)) {
-            ConfigurationSection achievementSection = achievements.getConfigurationSection(achievementKey);
-            if (achievementSection == null) continue;
+        // Use the AchievementManager for proper persistence
+        if (plugin.achievementManager != null) {
+            plugin.achievementManager.checkTownAchievements(townName, townStats);
+        } else {
+            // Fallback to old system if AchievementManager is not available
+            ConfigurationSection achievements = plugin.getConfig().getConfigurationSection("towny.achievements");
+            if (achievements == null) return;
             
-            String statName = achievementSection.getString("stat");
-            if (statName == null) continue;
+            TownAchievementData achievementData = townAchievements.computeIfAbsent(townName, 
+                k -> new TownAchievementData(townName));
             
-            Object statValue = townStats.get(statName);
-            if (statValue == null) continue;
-            
-            int currentValue = ((Number) statValue).intValue();
-            
-            ConfigurationSection tiers = achievementSection.getConfigurationSection("tiers");
-            if (tiers == null) continue;
-            
-            for (String tierKey : tiers.getKeys(false)) {
-                ConfigurationSection tierSection = tiers.getConfigurationSection(tierKey);
-                if (tierSection == null) continue;
+            for (String achievementKey : achievements.getKeys(false)) {
+                ConfigurationSection achievementSection = achievements.getConfigurationSection(achievementKey);
+                if (achievementSection == null) continue;
                 
-                int tier = Integer.parseInt(tierKey);
-                int threshold = tierSection.getInt("threshold", 0);
-                String tierName = tierSection.getString("name", "Unknown");
-                int points = tierSection.getInt("points", 0);
+                String statName = achievementSection.getString("stat");
+                if (statName == null) continue;
                 
-                if (currentValue >= threshold) {
-                    if (!achievementData.hasUnlockedTier(achievementKey, tier)) {
-                        // Unlock achievement
-                        achievementData.unlockTier(achievementKey, tier, currentValue);
-                        
-                        // Award XP
-                        int xpGained = points;
-                        if (levelingEnabled) {
-                            TownLevelData levelData = townLevels.get(townName);
-                            if (levelData != null) {
-                                levelData.addXP(xpGained);
-                            }
-                        }
-                        
-                        // Announce achievement
-                        if (plugin.getConfig().getBoolean("towny.notifications.achievements", true)) {
-                            Bukkit.broadcastMessage("§6[Towny] §e" + townName + " §ahas unlocked achievement: §6" + tierName + "§a!");
+                Object statValue = townStats.get(statName);
+                if (statValue == null) continue;
+                
+                int currentValue = ((Number) statValue).intValue();
+                
+                ConfigurationSection tiers = achievementSection.getConfigurationSection("tiers");
+                if (tiers == null) continue;
+                
+                for (String tierKey : tiers.getKeys(false)) {
+                    ConfigurationSection tierSection = tiers.getConfigurationSection(tierKey);
+                    if (tierSection == null) continue;
+                    
+                    int tier = Integer.parseInt(tierKey);
+                    int threshold = tierSection.getInt("threshold", 0);
+                    String tierName = tierSection.getString("name", "Unknown");
+                    int points = tierSection.getInt("points", 0);
+                    
+                    if (currentValue >= threshold) {
+                        if (!achievementData.hasUnlockedTier(achievementKey, tier)) {
+                            // Unlock achievement
+                            achievementData.unlockTier(achievementKey, tier, currentValue);
                             
-                            // Play achievement sound for all online players
-                            for (org.bukkit.entity.Player player : Bukkit.getOnlinePlayers()) {
-                                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+                            // Award XP
+                            int xpGained = points;
+                            if (levelingEnabled) {
+                                TownLevelData levelData = townLevels.get(townName);
+                                if (levelData != null) {
+                                    levelData.addXP(xpGained);
+                                }
                             }
+                            
+                            // Announce achievement
+                            if (plugin.getConfig().getBoolean("towny.notifications.achievements", true)) {
+                                Bukkit.broadcastMessage("§6[Towny] §e" + townName + " §ahas unlocked achievement: §6" + tierName + "§a!");
+                                
+                                // Play achievement sound for all online players
+                                for (org.bukkit.entity.Player player : Bukkit.getOnlinePlayers()) {
+                                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+                                }
+                            }
+                            
+                            logManager.debug("Town " + townName + " unlocked achievement: " + tierName + " (+" + xpGained + " XP)");
                         }
-                        
-                        logManager.debug("Town " + townName + " unlocked achievement: " + tierName + " (+" + xpGained + " XP)");
                     }
                 }
             }
@@ -511,12 +614,14 @@ public class TownyManager {
         private int level;
         private int totalXP;
         private long lastUpdated;
+        private Map<String, Object> lastCalculatedStats; // Added for XP difference calculation
         
         public TownLevelData(String townName, int level, int totalXP) {
             this.townName = townName;
             this.level = level;
             this.totalXP = totalXP;
             this.lastUpdated = System.currentTimeMillis();
+            this.lastCalculatedStats = new HashMap<>(); // Initialize lastCalculatedStats
         }
         
         public void addXP(int xp) {
@@ -533,6 +638,8 @@ public class TownyManager {
         public void setTotalXP(int totalXP) { this.totalXP = totalXP; }
         public long getLastUpdated() { return lastUpdated; }
         public void setLastUpdated(long lastUpdated) { this.lastUpdated = lastUpdated; }
+        public Map<String, Object> getLastCalculatedStats() { return lastCalculatedStats; } // Added getter
+        public void setLastCalculatedStats(Map<String, Object> lastCalculatedStats) { this.lastCalculatedStats = lastCalculatedStats; } // Added setter
     }
     
     public static class TownAchievementData {

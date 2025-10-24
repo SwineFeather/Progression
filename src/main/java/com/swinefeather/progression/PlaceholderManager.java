@@ -95,8 +95,12 @@ public class PlaceholderManager {
             }
 
             if (!placeholderValues.isEmpty()) {
-                dbManager.savePlaceholderStats(playerUUID, placeholderValues);
-                plugin.getLogger().info("Saved " + placeholderValues.size() + " placeholders for " + playerUUID);
+                if (dbManager != null && dbManager.isConnected()) {
+                    dbManager.savePlaceholderStats(playerUUID, placeholderValues);
+                    plugin.getLogger().info("Saved " + placeholderValues.size() + " placeholders for " + playerUUID);
+                } else {
+                    plugin.getLogger().info("Database manager not available, skipping placeholder save for " + playerUUID);
+                }
             } else {
                 plugin.getLogger().info("No valid placeholder values for " + playerUUID);
             }

@@ -15,7 +15,7 @@ public class LevelManager {
     private final Main plugin;
     private final LogManager logManager;
     private final Map<UUID, PlayerLevelData> playerLevels;
-    private final Map<String, TownLevelData> townLevels;
+    public final Map<String, TownLevelData> townLevels;
     private final List<LevelDefinition> playerLevelDefinitions;
     private final List<LevelDefinition> townLevelDefinitions;
     private final Gson gson;
@@ -51,42 +51,63 @@ public class LevelManager {
     private List<LevelDefinition> initializePlayerLevels() {
         List<LevelDefinition> levels = new ArrayList<>();
         
-        // Player levels (35 levels total) - Much easier XP requirements for faster progression!
-        levels.add(new LevelDefinition(1, 0, "Newcomer", "Welcome to the server!", "#6b7280"));
-        levels.add(new LevelDefinition(2, 100, "Novice", "Getting started", "#10b981"));
-        levels.add(new LevelDefinition(3, 250, "Apprentice", "Learning the ropes", "#3b82f6"));
-        levels.add(new LevelDefinition(4, 500, "Journeyman", "Making progress", "#8b5cf6"));
-        levels.add(new LevelDefinition(5, 800, "Adventurer", "Exploring the world", "#f59e0b"));
-        levels.add(new LevelDefinition(6, 1200, "Explorer", "Discovering new places", "#06b6d4"));
-        levels.add(new LevelDefinition(7, 1700, "Veteran", "Experienced player", "#84cc16"));
-        levels.add(new LevelDefinition(8, 2300, "Expert", "Skilled and knowledgeable", "#f97316"));
-        levels.add(new LevelDefinition(9, 3000, "Master", "Mastered the game", "#ef4444"));
-        levels.add(new LevelDefinition(10, 3800, "Champion", "Elite player", "#a855f7"));
-        levels.add(new LevelDefinition(11, 4700, "Legend", "Legendary status", "#dc2626"));
-        levels.add(new LevelDefinition(12, 5700, "Mythic", "Mythical prowess", "#9333ea"));
-        levels.add(new LevelDefinition(13, 6800, "Ascended", "Beyond mortal limits", "#1d4ed8"));
-        levels.add(new LevelDefinition(14, 8000, "Divine", "Divine power", "#059669"));
-        levels.add(new LevelDefinition(15, 9300, "Transcendent", "Transcended reality", "#be123c"));
-        levels.add(new LevelDefinition(16, 10700, "Cosmic", "Cosmic significance", "#7c3aed"));
-        levels.add(new LevelDefinition(17, 12200, "Ethereal", "Beyond mortal understanding", "#d97706"));
-        levels.add(new LevelDefinition(18, 13800, "Celestial", "Celestial power", "#ec4899"));
-        levels.add(new LevelDefinition(19, 15500, "Astral", "Master of the stars", "#6366f1"));
-        levels.add(new LevelDefinition(20, 17300, "Galactic", "Ruler of galaxies", "#10b981"));
-        levels.add(new LevelDefinition(21, 19200, "Universal", "Universal conqueror", "#f59e0b"));
-        levels.add(new LevelDefinition(22, 21200, "Infinite", "Infinite potential", "#ef4444"));
-        levels.add(new LevelDefinition(23, 23300, "Eternal", "Timeless legend", "#a855f7"));
-        levels.add(new LevelDefinition(24, 25500, "Omnipotent", "Ultimate power", "#dc2626"));
-        levels.add(new LevelDefinition(25, 27800, "Omniscient", "All-knowing entity", "#9333ea"));
-        levels.add(new LevelDefinition(26, 30200, "Primordial", "Origin of all", "#1d4ed8"));
-        levels.add(new LevelDefinition(27, 32700, "Voidwalker", "Master of the void", "#059669"));
-        levels.add(new LevelDefinition(28, 35300, "Starforger", "Creator of stars", "#be123c"));
-        levels.add(new LevelDefinition(29, 38000, "Reality Weaver", "Shaper of reality", "#7c3aed"));
-        levels.add(new LevelDefinition(30, 40800, "Time Lord", "Master of time", "#d97706"));
-        levels.add(new LevelDefinition(31, 43700, "Dimension Lord", "Ruler of dimensions", "#ec4899"));
-        levels.add(new LevelDefinition(32, 46700, "Cosmic Sovereign", "Sovereign of the cosmos", "#6366f1"));
-        levels.add(new LevelDefinition(33, 49800, "Eternal Monarch", "Eternal ruler", "#10b981"));
-        levels.add(new LevelDefinition(34, 53000, "Transcendent King", "King beyond reality", "#f59e0b"));
-        levels.add(new LevelDefinition(35, 56300, "Nexus Overlord", "Ultimate overlord of existence", "#ef4444"));
+        // Try to load from config first
+        ConfigurationSection levelConfig = plugin.getConfig().getConfigurationSection("level.player_levels");
+        if (levelConfig != null) {
+            for (String key : levelConfig.getKeys(false)) {
+                ConfigurationSection levelSection = levelConfig.getConfigurationSection(key);
+                if (levelSection != null) {
+                    int level = levelSection.getInt("level", 1);
+                    int xpRequired = levelSection.getInt("xp_required", 0);
+                    String title = levelSection.getString("title", "Level " + level);
+                    String description = levelSection.getString("description", "");
+                    String color = levelSection.getString("color", "#6b7280");
+                    levels.add(new LevelDefinition(level, xpRequired, title, description, color));
+                }
+            }
+            logManager.debug("Loaded " + levels.size() + " player levels from config");
+        }
+        
+        // Fallback to default levels if config is empty
+        if (levels.isEmpty()) {
+            logManager.debug("No player levels found in config, using defaults");
+            // Player levels (35 levels total) - Much easier XP requirements for faster progression!
+            levels.add(new LevelDefinition(1, 0, "Newcomer", "Welcome to the server!", "#6b7280"));
+            levels.add(new LevelDefinition(2, 100, "Novice", "Getting started", "#10b981"));
+            levels.add(new LevelDefinition(3, 250, "Apprentice", "Learning the ropes", "#3b82f6"));
+            levels.add(new LevelDefinition(4, 500, "Journeyman", "Making progress", "#8b5cf6"));
+            levels.add(new LevelDefinition(5, 800, "Adventurer", "Exploring the world", "#f59e0b"));
+            levels.add(new LevelDefinition(6, 1200, "Explorer", "Discovering new places", "#06b6d4"));
+            levels.add(new LevelDefinition(7, 1700, "Veteran", "Experienced player", "#84cc16"));
+            levels.add(new LevelDefinition(8, 2300, "Expert", "Skilled and knowledgeable", "#f97316"));
+            levels.add(new LevelDefinition(9, 3000, "Master", "Mastered the game", "#ef4444"));
+            levels.add(new LevelDefinition(10, 3800, "Champion", "Elite player", "#a855f7"));
+            levels.add(new LevelDefinition(11, 4700, "Legend", "Legendary status", "#dc2626"));
+            levels.add(new LevelDefinition(12, 5700, "Mythic", "Mythical prowess", "#9333ea"));
+            levels.add(new LevelDefinition(13, 6800, "Ascended", "Beyond mortal limits", "#1d4ed8"));
+            levels.add(new LevelDefinition(14, 8000, "Divine", "Divine power", "#059669"));
+            levels.add(new LevelDefinition(15, 9300, "Transcendent", "Transcended reality", "#be123c"));
+            levels.add(new LevelDefinition(16, 10700, "Cosmic", "Cosmic significance", "#7c3aed"));
+            levels.add(new LevelDefinition(17, 12200, "Ethereal", "Beyond mortal understanding", "#d97706"));
+            levels.add(new LevelDefinition(18, 13800, "Celestial", "Celestial power", "#ec4899"));
+            levels.add(new LevelDefinition(19, 15500, "Astral", "Master of the stars", "#6366f1"));
+            levels.add(new LevelDefinition(20, 17300, "Galactic", "Ruler of galaxies", "#10b981"));
+            levels.add(new LevelDefinition(21, 19200, "Universal", "Universal conqueror", "#f59e0b"));
+            levels.add(new LevelDefinition(22, 21200, "Infinite", "Infinite potential", "#ef4444"));
+            levels.add(new LevelDefinition(23, 23300, "Eternal", "Timeless legend", "#a855f7"));
+            levels.add(new LevelDefinition(24, 25500, "Omnipotent", "Ultimate power", "#dc2626"));
+            levels.add(new LevelDefinition(25, 27800, "Omniscient", "All-knowing entity", "#9333ea"));
+            levels.add(new LevelDefinition(26, 30200, "Primordial", "Origin of all", "#1d4ed8"));
+            levels.add(new LevelDefinition(27, 32700, "Voidwalker", "Master of the void", "#059669"));
+            levels.add(new LevelDefinition(28, 35300, "Starforger", "Creator of stars", "#be123c"));
+            levels.add(new LevelDefinition(29, 38000, "Reality Weaver", "Shaper of reality", "#7c3aed"));
+            levels.add(new LevelDefinition(30, 40800, "Time Lord", "Master of time", "#d97706"));
+            levels.add(new LevelDefinition(31, 43700, "Dimension Lord", "Ruler of dimensions", "#ec4899"));
+            levels.add(new LevelDefinition(32, 46700, "Cosmic Sovereign", "Sovereign of the cosmos", "#6366f1"));
+            levels.add(new LevelDefinition(33, 49800, "Eternal Monarch", "Eternal ruler", "#10b981"));
+            levels.add(new LevelDefinition(34, 53000, "Transcendent King", "King beyond reality", "#f59e0b"));
+            levels.add(new LevelDefinition(35, 56300, "Nexus Overlord", "Ultimate overlord of existence", "#ef4444"));
+        }
         
         return levels;
     }
@@ -180,6 +201,11 @@ public class LevelManager {
         // Sync to database if enabled
         if (plugin.levelDatabaseManager != null && plugin.levelDatabaseManager.isEnabled()) {
             plugin.levelDatabaseManager.syncPlayerLevel(playerUUID, playerName, newLevel, newXP);
+        }
+        
+        // Sync to Supabase if enabled
+        if (plugin.supabaseManager != null && plugin.supabaseManager.isEnabled()) {
+            plugin.supabaseManager.syncPlayerLevel(playerUUID, playerName, newLevel, newXP);
         }
         
         logManager.debug("Added " + xp + " XP to " + playerName + " (Total: " + newXP + ", Level: " + newLevel + ")");
@@ -308,31 +334,49 @@ public class LevelManager {
     }
 
     private void loadLevelData() {
-        // Load player levels
-        if (playerLevelsFile.exists()) {
-            try (Reader reader = new FileReader(playerLevelsFile)) {
-                Type type = new TypeToken<Map<UUID, PlayerLevelData>>(){}.getType();
-                Map<UUID, PlayerLevelData> loaded = gson.fromJson(reader, type);
-                if (loaded != null) {
-                    playerLevels.putAll(loaded);
+        // Load player levels from individual files
+        if (playerLevelsDir.exists()) {
+            File[] playerFiles = playerLevelsDir.listFiles((dir, name) -> name.endsWith(".json"));
+            if (playerFiles != null) {
+                for (File playerFile : playerFiles) {
+                    try {
+                        String fileName = playerFile.getName();
+                        UUID playerUUID = UUID.fromString(fileName.substring(0, fileName.length() - 5));
+                        
+                        try (Reader reader = new FileReader(playerFile)) {
+                            PlayerLevelData data = gson.fromJson(reader, PlayerLevelData.class);
+                            if (data != null) {
+                                playerLevels.put(playerUUID, data);
+                            }
+                        }
+                    } catch (Exception e) {
+                        logManager.warning("Failed to load player level data from " + playerFile.getName() + ": " + e.getMessage());
+                    }
                 }
-                logManager.debug("Loaded " + playerLevels.size() + " player level records");
-            } catch (Exception e) {
-                logManager.severe("Failed to load player level data", e);
+                logManager.debug("Loaded " + playerLevels.size() + " player level records from individual files");
             }
         }
 
-        // Load town levels
-        if (townLevelsFile.exists()) {
-            try (Reader reader = new FileReader(townLevelsFile)) {
-                Type type = new TypeToken<Map<String, TownLevelData>>(){}.getType();
-                Map<String, TownLevelData> loaded = gson.fromJson(reader, type);
-                if (loaded != null) {
-                    townLevels.putAll(loaded);
+        // Load town levels from individual files
+        if (townLevelsDir.exists()) {
+            File[] townFiles = townLevelsDir.listFiles((dir, name) -> name.endsWith(".json"));
+            if (townFiles != null) {
+                for (File townFile : townFiles) {
+                    try {
+                        String fileName = townFile.getName();
+                        String townName = fileName.substring(0, fileName.length() - 5);
+                        
+                        try (Reader reader = new FileReader(townFile)) {
+                            TownLevelData data = gson.fromJson(reader, TownLevelData.class);
+                            if (data != null) {
+                                townLevels.put(townName, data);
+                            }
+                        }
+                    } catch (Exception e) {
+                        logManager.warning("Failed to load town level data from " + townFile.getName() + ": " + e.getMessage());
+                    }
                 }
-                logManager.debug("Loaded " + townLevels.size() + " town level records");
-            } catch (Exception e) {
-                logManager.severe("Failed to load town level data", e);
+                logManager.debug("Loaded " + townLevels.size() + " town level records from individual files");
             }
         }
     }
@@ -344,21 +388,69 @@ public class LevelManager {
         File playerFile = new File(playerLevelsDir, playerUUID.toString() + ".json");
         try (Writer writer = new FileWriter(playerFile)) {
             gson.toJson(data, writer);
+            logManager.debug("Saved player level data for " + playerUUID);
         } catch (Exception e) {
             logManager.severe("Failed to save player level data for " + playerUUID, e);
         }
     }
 
-    private void saveTownLevelData(String townName) {
+    public void saveTownLevelData(String townName) {
         TownLevelData data = townLevels.get(townName);
         if (data == null) return;
 
         File townFile = new File(townLevelsDir, townName + ".json");
         try (Writer writer = new FileWriter(townFile)) {
             gson.toJson(data, writer);
+            logManager.debug("Saved town level data for " + townName);
         } catch (Exception e) {
             logManager.severe("Failed to save town level data for " + townName, e);
         }
+    }
+    
+    public PlayerLevelData loadPlayerLevelData(UUID playerUUID) {
+        // Check if already loaded in memory
+        if (playerLevels.containsKey(playerUUID)) {
+            return playerLevels.get(playerUUID);
+        }
+        
+        // Load from file
+        File playerFile = new File(playerLevelsDir, playerUUID.toString() + ".json");
+        if (playerFile.exists()) {
+            try (Reader reader = new FileReader(playerFile)) {
+                PlayerLevelData data = gson.fromJson(reader, PlayerLevelData.class);
+                if (data != null) {
+                    playerLevels.put(playerUUID, data);
+                    return data;
+                }
+            } catch (Exception e) {
+                logManager.warning("Failed to load player level data for " + playerUUID + ": " + e.getMessage());
+            }
+        }
+        
+        return null;
+    }
+    
+    public TownLevelData loadTownLevelData(String townName) {
+        // Check if already loaded in memory
+        if (townLevels.containsKey(townName)) {
+            return townLevels.get(townName);
+        }
+        
+        // Load from file
+        File townFile = new File(townLevelsDir, townName + ".json");
+        if (townFile.exists()) {
+            try (Reader reader = new FileReader(townFile)) {
+                TownLevelData data = gson.fromJson(reader, TownLevelData.class);
+                if (data != null) {
+                    townLevels.put(townName, data);
+                    return data;
+                }
+            } catch (Exception e) {
+                logManager.warning("Failed to load town level data for " + townName + ": " + e.getMessage());
+            }
+        }
+        
+        return null;
     }
 
     public void saveAllData() {
@@ -593,12 +685,14 @@ public class LevelManager {
         private int level;
         private int totalXP;
         private long lastUpdated;
+        private Map<String, Object> lastCalculatedStats;
 
         public TownLevelData(String townName, int level, int totalXP) {
             this.townName = townName;
             this.level = level;
             this.totalXP = totalXP;
             this.lastUpdated = System.currentTimeMillis();
+            this.lastCalculatedStats = new HashMap<>();
         }
 
         public void addXP(int xp) {
@@ -615,5 +709,7 @@ public class LevelManager {
         public void setTotalXP(int totalXP) { this.totalXP = totalXP; }
         public long getLastUpdated() { return lastUpdated; }
         public void setLastUpdated(long lastUpdated) { this.lastUpdated = lastUpdated; }
+        public Map<String, Object> getLastCalculatedStats() { return lastCalculatedStats; }
+        public void setLastCalculatedStats(Map<String, Object> lastCalculatedStats) { this.lastCalculatedStats = lastCalculatedStats; }
     }
 } 

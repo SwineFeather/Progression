@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.google.gson.stream.JsonReader;
 import java.io.StringReader;
+import okhttp3.Response;
 
 public class SupabaseManager {
     private final Plugin plugin;
@@ -59,13 +60,26 @@ public class SupabaseManager {
         this.logger = logManager;
         this.gson = new Gson();
         
-        // Configure HTTP client with minimal settings to prevent startup issues
+        // Configure HTTP client with robust error handling
         this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(20, TimeUnit.SECONDS)
                 .writeTimeout(10, TimeUnit.SECONDS)
                 .connectionPool(new ConnectionPool(2, 2, TimeUnit.MINUTES)) // Reduced connections
                 .retryOnConnectionFailure(false) // Disable automatic retry
+                .addInterceptor(chain -> {
+                    Request request = chain.request();
+                    try {
+                        Response response = chain.proceed(request);
+                        if (!response.isSuccessful()) {
+                            logger.warning("HTTP " + response.code() + " for " + request.url() + ": " + response.message());
+                        }
+                        return response;
+                    } catch (Exception e) {
+                        logger.warning("Network error for " + request.url() + ": " + e.getMessage());
+                        throw e;
+                    }
+                })
                 .build();
     }
     
@@ -380,55 +394,222 @@ public class SupabaseManager {
     
     public String getLeaderboard(String stat, int limit) {
         if (!enabled) return "Supabase not enabled";
-        String url = supabaseUrl + "/rest/v1/player_stats?order=" + stat + ".desc.nullslast&limit=" + limit;
-        Request request = new Request.Builder()
-                .url(url)
-                .addHeader("apikey", supabaseKey)
-                .addHeader("Authorization", "Bearer " + supabaseKey)
-                .build();
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                return "Failed to fetch leaderboard: " + response.code() + " " + response.message();
+        
+        try {
+            // Use the player_leaderboard view for better performance
+            String url = supabaseUrl + "/rest/v1/player_leaderboard?order=total_points.desc.nullslast&limit=" + limit;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .addHeader("Prefer", "count=exact")
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch leaderboard: " + response.code() + " " + response.message());
+                    return "Failed to fetch leaderboard: " + response.code() + " " + response.message();
+                }
+                return response.body() != null ? response.body().string() : "[]";
             }
-            return response.body() != null ? response.body().string() : "No data";
         } catch (Exception e) {
-            return "Error fetching leaderboard: " + e.getMessage();
+            logger.warning("Error fetching leaderboard: " + e.getMessage());
+            return "[]";
         }
     }
     
     public String getPlayerStats(UUID uuid) {
         if (!enabled) return "Supabase not enabled";
-        String url = supabaseUrl + "/rest/v1/player_stats?player_uuid=eq." + uuid;
-        Request request = new Request.Builder()
-                .url(url)
-                .addHeader("apikey", supabaseKey)
-                .addHeader("Authorization", "Bearer " + supabaseKey)
-                .build();
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                return "Failed to fetch player stats: " + response.code() + " " + response.message();
+        
+        try {
+            String url = supabaseUrl + "/rest/v1/player_stats?player_uuid=eq." + uuid;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch player stats: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
             }
-            return response.body() != null ? response.body().string() : "No data";
         } catch (Exception e) {
-            return "Error fetching player stats: " + e.getMessage();
+            logger.warning("Error fetching player stats: " + e.getMessage());
+            return "[]";
+        }
+    }
+    
+    public String getPlayerAwards(UUID uuid) {
+        if (!enabled) return "Supabase not enabled";
+        
+        try {
+            String url = supabaseUrl + "/rest/v1/player_awards?player_uuid=eq." + uuid + "&order=achieved_at.desc";
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch player awards: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
+            }
+        } catch (Exception e) {
+            logger.warning("Error fetching player awards: " + e.getMessage());
+            return "[]";
+        }
+    }
+    
+    public String getPlayerMedals(UUID uuid) {
+        if (!enabled) return "Supabase not enabled";
+        
+        try {
+            String url = supabaseUrl + "/rest/v1/player_medals?player_uuid=eq." + uuid;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch player medals: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
+            }
+        } catch (Exception e) {
+            logger.warning("Error fetching player medals: " + e.getMessage());
+            return "[]";
+        }
+    }
+    
+    public String getPlayerPoints(UUID uuid) {
+        if (!enabled) return "Supabase not enabled";
+        
+        try {
+            String url = supabaseUrl + "/rest/v1/player_points?player_uuid=eq." + uuid;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch player points: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
+            }
+        } catch (Exception e) {
+            logger.warning("Error fetching player points: " + e.getMessage());
+            return "[]";
         }
     }
     
     public String getAwardLeaderboard(String awardId, int limit) {
         if (!enabled) return "Supabase not enabled";
-        String url = supabaseUrl + "/rest/v1/player_awards?award_id=eq." + awardId + "&order=points.desc.nullslast&limit=" + limit;
-        Request request = new Request.Builder()
-                .url(url)
-                .addHeader("apikey", supabaseKey)
-                .addHeader("Authorization", "Bearer " + supabaseKey)
-                .build();
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                return "Failed to fetch award leaderboard: " + response.code() + " " + response.message();
+        
+        try {
+            // Use the award_leaderboard view for better performance
+            String url = supabaseUrl + "/rest/v1/award_leaderboard?award_id=eq." + awardId + "&order=points.desc.nullslast&limit=" + limit;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch award leaderboard: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
             }
-            return response.body() != null ? response.body().string() : "No data";
         } catch (Exception e) {
-            return "Error fetching award leaderboard: " + e.getMessage();
+            logger.warning("Error fetching award leaderboard: " + e.getMessage());
+            return "[]";
+        }
+    }
+    
+    public String getLevelLeaderboard(int limit) {
+        if (!enabled) return "Supabase not enabled";
+        
+        try {
+            // Use the level_leaderboard view for better performance
+            String url = supabaseUrl + "/rest/v1/level_leaderboard?order=level.desc,total_xp.desc.nullslast&limit=" + limit;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch level leaderboard: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
+            }
+        } catch (Exception e) {
+            logger.warning("Error fetching level leaderboard: " + e.getMessage());
+            return "[]";
+        }
+    }
+    
+    public String getAchievementProgress(UUID uuid) {
+        if (!enabled) return "Supabase not enabled";
+        
+        try {
+            String url = supabaseUrl + "/rest/v1/achievement_progress?player_uuid=eq." + uuid + "&order=achievement_id,tier";
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch achievement progress: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
+            }
+        } catch (Exception e) {
+            logger.warning("Error fetching achievement progress: " + e.getMessage());
+            return "[]";
+        }
+    }
+    
+    public String getTopPlayersByStat(String statPath, int limit) {
+        if (!enabled) return "Supabase not enabled";
+        
+        try {
+            // Query player_stats table with JSONB path
+            String url = supabaseUrl + "/rest/v1/player_stats?select=player_uuid,stats->" + statPath + "&order=stats->" + statPath + ".desc.nullslast&limit=" + limit;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch top players by stat: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
+            }
+        } catch (Exception e) {
+            logger.warning("Error fetching top players by stat: " + e.getMessage());
+            return "[]";
         }
     }
 
@@ -449,13 +630,15 @@ public class SupabaseManager {
                 awardData.addProperty("player_uuid", uuid.toString());
                 awardData.addProperty("award_id", awardId);
                 awardData.addProperty("award_name", awardName);
-                awardData.addProperty("award_description", awardDescription);
+                if (awardDescription != null && !awardDescription.isEmpty()) {
+                    awardData.addProperty("award_description", awardDescription);
+                }
                 awardData.addProperty("tier", tier);
                 awardData.addProperty("medal", medal);
                 awardData.addProperty("points", points);
                 if (statValue > 0) awardData.addProperty("stat_value", statValue);
                 if (statPath != null && !statPath.isEmpty()) awardData.addProperty("stat_path", statPath);
-                awardData.addProperty("achieved_at", new java.sql.Timestamp(awardedAt).toString());
+                awardData.addProperty("achieved_at", awardedAt);
                 String url = supabaseUrl + "/rest/v1/player_awards";
                 RequestBody body = RequestBody.create(MediaType.parse("application/json"), awardData.toString());
                 Request request = new Request.Builder()
@@ -551,8 +734,11 @@ public class SupabaseManager {
             try {
                 JsonObject pointData = new JsonObject();
                 pointData.addProperty("player_uuid", uuid.toString());
+                String safeNameForPoints = resolvePlayerName(uuid, name);
+                pointData.addProperty("player_name", safeNameForPoints);
                 pointData.addProperty("total_points", totalPoints);
-                String url = supabaseUrl + "/rest/v1/player_points";
+                pointData.addProperty("last_updated", System.currentTimeMillis());
+                String url = supabaseUrl + "/rest/v1/player_points?on_conflict=player_uuid";
                 RequestBody body = RequestBody.create(MediaType.parse("application/json"), pointData.toString());
                 Request request = new Request.Builder()
                         .url(url)
@@ -575,10 +761,13 @@ public class SupabaseManager {
             try {
                 JsonObject medalData = new JsonObject();
                 medalData.addProperty("player_uuid", uuid.toString());
+                String safeNameForMedals = resolvePlayerName(uuid, name);
+                medalData.addProperty("player_name", safeNameForMedals);
                 medalData.addProperty("bronze_count", bronzeCount);
                 medalData.addProperty("silver_count", silverCount);
                 medalData.addProperty("gold_count", goldCount);
                 medalData.addProperty("total_medals", totalMedals);
+                medalData.addProperty("last_updated", System.currentTimeMillis());
                 
                 String url = supabaseUrl + "/rest/v1/player_medals";
                 RequestBody body = RequestBody.create(MediaType.parse("application/json"), medalData.toString());
@@ -609,6 +798,46 @@ public class SupabaseManager {
     }
     
     // Manual update methods since triggers are disabled
+    /**
+     * Resolve a non-null player name for Supabase writes.
+     * Order of precedence:
+     * - Provided name (if non-blank)
+     * - Bukkit OfflinePlayer name
+     * - Supabase players table lookup
+     * - "Unknown"
+     */
+    private String resolvePlayerName(UUID uuid, String providedName) {
+        if (providedName != null && !providedName.trim().isEmpty()) {
+            return providedName;
+        }
+        try {
+            String bukkitName = plugin.getServer().getOfflinePlayer(uuid).getName();
+            if (bukkitName != null && !bukkitName.trim().isEmpty()) {
+                return bukkitName;
+            }
+        } catch (Exception ignored) { }
+
+        try {
+            String body = rawGet("/rest/v1/players?uuid=eq." + uuid);
+            if (body != null && !body.equals("[]")) {
+                com.google.gson.stream.JsonReader reader = new com.google.gson.stream.JsonReader(new java.io.StringReader(body));
+                reader.setLenient(true);
+                com.google.gson.JsonArray arr = com.google.gson.JsonParser.parseReader(reader).getAsJsonArray();
+                if (arr.size() > 0) {
+                    com.google.gson.JsonObject obj = arr.get(0).getAsJsonObject();
+                    if (obj.has("name")) {
+                        String supabaseName = obj.get("name").getAsString();
+                        if (supabaseName != null && !supabaseName.trim().isEmpty()) {
+                            return supabaseName;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) { }
+
+        return "Unknown";
+    }
+
     private void updatePlayerMedalsManually(UUID uuid, String name, String medalType) {
         try {
             // First, get current medal counts
@@ -657,10 +886,13 @@ public class SupabaseManager {
             // Upsert updated medal counts
             JsonObject medalData = new JsonObject();
             medalData.addProperty("player_uuid", uuid.toString());
+            String safeNameForMedals = resolvePlayerName(uuid, name);
+            medalData.addProperty("player_name", safeNameForMedals);
             medalData.addProperty("bronze_count", bronzeCount);
             medalData.addProperty("silver_count", silverCount);
             medalData.addProperty("gold_count", goldCount);
             medalData.addProperty("total_medals", totalMedals);
+            medalData.addProperty("last_updated", System.currentTimeMillis());
             
             String url = supabaseUrl + "/rest/v1/player_medals";
             RequestBody body = RequestBody.create(MediaType.parse("application/json"), medalData.toString());
@@ -722,9 +954,12 @@ public class SupabaseManager {
             // Upsert updated points
             JsonObject pointData = new JsonObject();
             pointData.addProperty("player_uuid", uuid.toString());
+            String safeNameForPoints = resolvePlayerName(uuid, name);
+            pointData.addProperty("player_name", safeNameForPoints);
             pointData.addProperty("total_points", currentPoints);
+            pointData.addProperty("last_updated", System.currentTimeMillis());
             
-            String url = supabaseUrl + "/rest/v1/player_points";
+            String url = supabaseUrl + "/rest/v1/player_points?on_conflict=player_uuid";
             RequestBody body = RequestBody.create(MediaType.parse("application/json"), pointData.toString());
             Request request = new Request.Builder()
                     .url(url)
@@ -781,5 +1016,336 @@ public class SupabaseManager {
         // This would trigger a refresh of player data from the database
         // Implementation depends on your database structure
         logger.debug("Refreshing player data for: " + playerUUID);
+    }
+
+    public void syncLevelDefinitions(List<LevelManager.LevelDefinition> playerLevels, List<LevelManager.LevelDefinition> townLevels) {
+        if (!enabled) return;
+        
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                // Sync player levels
+                for (LevelManager.LevelDefinition level : playerLevels) {
+                    JsonObject levelData = new JsonObject();
+                    levelData.addProperty("level_type", "player");
+                    levelData.addProperty("level", level.getLevel());
+                    levelData.addProperty("xp_required", level.getXpRequired());
+                    levelData.addProperty("title", level.getTitle());
+                    levelData.addProperty("description", level.getDescription());
+                    levelData.addProperty("color", level.getColor());
+                    
+                    String url = supabaseUrl + "/rest/v1/level_definitions";
+                    RequestBody body = RequestBody.create(MediaType.parse("application/json"), levelData.toString());
+                    Request request = new Request.Builder()
+                            .url(url)
+                            .addHeader("apikey", supabaseKey)
+                            .addHeader("Authorization", "Bearer " + supabaseKey)
+                            .addHeader("Content-Type", "application/json")
+                            .addHeader("Prefer", "resolution=merge-duplicates")
+                            .post(body)
+                            .build();
+                    
+                    performUpsertWithRetry(request, "level definition sync", 3);
+                }
+                
+                // Sync town levels
+                for (LevelManager.LevelDefinition level : townLevels) {
+                    JsonObject levelData = new JsonObject();
+                    levelData.addProperty("level_type", "town");
+                    levelData.addProperty("level", level.getLevel());
+                    levelData.addProperty("xp_required", level.getXpRequired());
+                    levelData.addProperty("title", level.getTitle());
+                    levelData.addProperty("description", level.getDescription());
+                    levelData.addProperty("color", level.getColor());
+                    
+                    String url = supabaseUrl + "/rest/v1/level_definitions";
+                    RequestBody body = RequestBody.create(MediaType.parse("application/json"), levelData.toString());
+                    Request request = new Request.Builder()
+                            .url(url)
+                            .addHeader("apikey", supabaseKey)
+                            .addHeader("Authorization", "Bearer " + supabaseKey)
+                            .addHeader("Content-Type", "application/json")
+                            .addHeader("Prefer", "resolution=merge-duplicates")
+                            .post(body)
+                            .build();
+                    
+                    performUpsertWithRetry(request, "level definition sync", 3);
+                }
+                
+                logger.debug("Successfully synced " + (playerLevels.size() + townLevels.size()) + " level definitions to Supabase");
+                
+            } catch (Exception e) {
+                logger.severe("Failed to sync level definitions to Supabase", e);
+            }
+        });
+    }
+    
+    public void syncAchievementDefinitions(List<AchievementManager.AchievementDefinition> achievements) {
+        if (!enabled) return;
+        
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                for (AchievementManager.AchievementDefinition achievement : achievements) {
+                    // Sync achievement definition
+                    JsonObject achievementData = new JsonObject();
+                    achievementData.addProperty("achievement_id", achievement.getId());
+                    achievementData.addProperty("name", achievement.getName());
+                    achievementData.addProperty("description", achievement.getDescription());
+                    achievementData.addProperty("stat", achievement.getStat());
+                    achievementData.addProperty("color", achievement.getColor());
+                    achievementData.addProperty("achievement_type", achievement.getType());
+                    
+                    String url = supabaseUrl + "/rest/v1/achievement_definitions";
+                    RequestBody body = RequestBody.create(MediaType.parse("application/json"), achievementData.toString());
+                    Request request = new Request.Builder()
+                            .url(url)
+                            .addHeader("apikey", supabaseKey)
+                            .addHeader("Authorization", "Bearer " + supabaseKey)
+                            .addHeader("Content-Type", "application/json")
+                            .addHeader("Prefer", "resolution=merge-duplicates")
+                            .post(body)
+                            .build();
+                    
+                    performUpsertWithRetry(request, "achievement definition sync", 3);
+                    
+                    // Sync achievement tiers
+                    for (AchievementManager.AchievementTier tier : achievement.getTiers()) {
+                        JsonObject tierData = new JsonObject();
+                        tierData.addProperty("achievement_id", achievement.getId());
+                        tierData.addProperty("tier", tier.getTier());
+                        tierData.addProperty("name", tier.getName());
+                        tierData.addProperty("description", tier.getDescription());
+                        tierData.addProperty("threshold", tier.getThreshold());
+                        tierData.addProperty("icon", tier.getIcon());
+                        tierData.addProperty("points", tier.getPoints());
+                        
+                        String tierUrl = supabaseUrl + "/rest/v1/achievement_tiers";
+                        RequestBody tierBody = RequestBody.create(MediaType.parse("application/json"), tierData.toString());
+                        Request tierRequest = new Request.Builder()
+                                .url(tierUrl)
+                                .addHeader("apikey", supabaseKey)
+                                .addHeader("Authorization", "Bearer " + supabaseKey)
+                                .addHeader("Content-Type", "application/json")
+                                .addHeader("Prefer", "resolution=merge-duplicates")
+                                .post(tierBody)
+                                .build();
+                        
+                        performUpsertWithRetry(tierRequest, "achievement tier sync", 3);
+                    }
+                }
+                
+                logger.debug("Successfully synced " + achievements.size() + " achievement definitions to Supabase");
+                
+            } catch (Exception e) {
+                logger.severe("Failed to sync achievement definitions to Supabase", e);
+            }
+        });
+    }
+    
+    public void syncPlayerLevel(UUID uuid, String name, int level, int totalXP) {
+        if (!enabled) return;
+        
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                JsonObject playerData = new JsonObject();
+                playerData.addProperty("uuid", uuid.toString());
+                playerData.addProperty("name", name);
+                playerData.addProperty("level", level);
+                playerData.addProperty("total_xp", totalXP);
+                playerData.addProperty("last_seen", System.currentTimeMillis());
+                if (level > 1) {
+                    playerData.addProperty("last_level_up", System.currentTimeMillis());
+                }
+                
+                String url = supabaseUrl + "/rest/v1/players";
+                RequestBody body = RequestBody.create(MediaType.parse("application/json"), playerData.toString());
+                Request request = new Request.Builder()
+                        .url(url)
+                        .addHeader("apikey", supabaseKey)
+                        .addHeader("Authorization", "Bearer " + supabaseKey)
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("Prefer", "resolution=merge-duplicates")
+                        .post(body)
+                        .build();
+                
+                performUpsertWithRetry(request, "player level sync", 3);
+                logger.debug("Successfully synced player level for " + name + " (Level " + level + ", XP: " + totalXP + ")");
+                
+            } catch (Exception e) {
+                logger.severe("Failed to sync player level for " + name, e);
+            }
+        });
+    }
+    
+    public void syncUnlockedAchievement(UUID uuid, String achievementId, int tier, int xpAwarded) {
+        if (!enabled) return;
+        
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                JsonObject achievementData = new JsonObject();
+                achievementData.addProperty("player_uuid", uuid.toString());
+                achievementData.addProperty("achievement_id", achievementId);
+                achievementData.addProperty("tier", tier);
+                achievementData.addProperty("xp_awarded", xpAwarded);
+                achievementData.addProperty("unlocked_at", new java.sql.Timestamp(System.currentTimeMillis()).toString());
+                
+                String url = supabaseUrl + "/rest/v1/unlocked_achievements";
+                RequestBody body = RequestBody.create(MediaType.parse("application/json"), achievementData.toString());
+                Request request = new Request.Builder()
+                        .url(url)
+                        .addHeader("apikey", supabaseKey)
+                        .addHeader("Authorization", "Bearer " + supabaseKey)
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("Prefer", "resolution=merge-duplicates")
+                        .post(body)
+                        .build();
+                
+                performUpsertWithRetry(request, "unlocked achievement sync", 3);
+                logger.debug("Successfully synced unlocked achievement: " + achievementId + " tier " + tier + " for player " + uuid);
+                
+            } catch (Exception e) {
+                logger.severe("Failed to sync unlocked achievement for " + uuid, e);
+            }
+        });
+    }
+
+    public void syncTownLevel(String townName, int level, int totalXP) {
+        if (!enabled) return;
+        
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                JsonObject townData = new JsonObject();
+                townData.addProperty("town_name", townName);
+                townData.addProperty("level", level);
+                townData.addProperty("total_xp", totalXP);
+                townData.addProperty("last_updated", System.currentTimeMillis());
+                
+                String url = supabaseUrl + "/rest/v1/town_levels";
+                RequestBody body = RequestBody.create(MediaType.parse("application/json"), townData.toString());
+                Request request = new Request.Builder()
+                        .url(url)
+                        .addHeader("apikey", supabaseKey)
+                        .addHeader("Authorization", "Bearer " + supabaseKey)
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("Prefer", "resolution=merge-duplicates")
+                        .post(body)
+                        .build();
+                
+                performUpsertWithRetry(request, "town level sync", 3);
+                logger.debug("Successfully synced town level for " + townName + " (Level " + level + ", XP: " + totalXP + ")");
+                
+            } catch (Exception e) {
+                logger.severe("Failed to sync town level for " + townName, e);
+            }
+        });
+    }
+    
+    public void syncTownStats(String townName, Map<String, Object> stats) {
+        if (!enabled) return;
+        
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                JsonObject townData = new JsonObject();
+                townData.addProperty("town_name", townName);
+                townData.addProperty("stats", gson.toJson(stats));
+                townData.addProperty("last_updated", System.currentTimeMillis());
+                
+                String url = supabaseUrl + "/rest/v1/town_stats";
+                RequestBody body = RequestBody.create(MediaType.parse("application/json"), townData.toString());
+                Request request = new Request.Builder()
+                        .url(url)
+                        .addHeader("apikey", supabaseKey)
+                        .addHeader("Authorization", "Bearer " + supabaseKey)
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("Prefer", "resolution=merge-duplicates")
+                        .post(body)
+                        .build();
+                
+                performUpsertWithRetry(request, "town stats sync", 3);
+                logger.debug("Successfully synced town stats for " + townName);
+                
+            } catch (Exception e) {
+                logger.severe("Failed to sync town stats for " + townName, e);
+            }
+        });
+    }
+    
+    public void syncTownAchievement(String townName, String achievementId, int tier, int xpAwarded) {
+        if (!enabled) return;
+        
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                JsonObject achievementData = new JsonObject();
+                achievementData.addProperty("town_name", townName);
+                achievementData.addProperty("achievement_id", achievementId);
+                achievementData.addProperty("tier", tier);
+                achievementData.addProperty("xp_awarded", xpAwarded);
+                achievementData.addProperty("unlocked_at", new java.sql.Timestamp(System.currentTimeMillis()).toString());
+                
+                String url = supabaseUrl + "/rest/v1/unlocked_achievements";
+                RequestBody body = RequestBody.create(MediaType.parse("application/json"), achievementData.toString());
+                Request request = new Request.Builder()
+                        .url(url)
+                        .addHeader("apikey", supabaseKey)
+                        .addHeader("Authorization", "Bearer " + supabaseKey)
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("Prefer", "resolution=merge-duplicates")
+                        .post(body)
+                        .build();
+                
+                performUpsertWithRetry(request, "town achievement sync", 3);
+                logger.debug("Successfully synced town achievement: " + achievementId + " tier " + tier + " for town " + townName);
+                
+            } catch (Exception e) {
+                logger.severe("Failed to sync town achievement for " + townName, e);
+            }
+        });
+    }
+    
+    public String getTownLevels(int limit) {
+        if (!enabled) return "Supabase not enabled";
+        
+        try {
+            String url = supabaseUrl + "/rest/v1/town_levels?order=level.desc,total_xp.desc.nullslast&limit=" + limit;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch town levels: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
+            }
+        } catch (Exception e) {
+            logger.warning("Error fetching town levels: " + e.getMessage());
+            return "[]";
+        }
+    }
+    
+    public String getTownStats(String townName) {
+        if (!enabled) return "Supabase not enabled";
+        
+        try {
+            String url = supabaseUrl + "/rest/v1/town_stats?town_name=eq." + townName;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", supabaseKey)
+                    .addHeader("Authorization", "Bearer " + supabaseKey)
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.warning("Failed to fetch town stats: " + response.code() + " " + response.message());
+                    return "[]";
+                }
+                return response.body() != null ? response.body().string() : "[]";
+            }
+        } catch (Exception e) {
+            logger.warning("Error fetching town stats: " + e.getMessage());
+            return "[]";
+        }
     }
 } 
